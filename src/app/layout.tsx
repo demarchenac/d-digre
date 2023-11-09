@@ -1,6 +1,8 @@
 import "~/styles/globals.css";
-
 import { Inter } from "next/font/google";
+import { cn } from "~/lib/utils";
+import { ThemeProvider } from "~/components/theme-provider";
+import { ThemeToggle } from "~/components/ui/theme-toggle";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,7 +22,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`font-sans ${inter.variable}`}>{children}</body>
+      <body
+        className={cn(
+          "min-h-screen bg-background font-sans antialiased",
+          inter.variable,
+        )}
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <header className="absolute left-0 top-0 flex w-screen justify-end  p-4">
+            <ThemeToggle />
+          </header>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
