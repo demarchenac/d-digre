@@ -3,6 +3,7 @@
 import { type ChangeEvent, useRef } from "react";
 import { cn } from "~/lib/utils";
 import { type MimeType, MimeTypeIcon } from "./mime-type-icon";
+import { useDropzone } from "~/hooks";
 
 export type DropzoneProps = {
   multiple?: boolean;
@@ -32,37 +33,28 @@ export function Dropzone({
   accept = defaultProps.accept,
   onUpload = defaultProps.onUpload,
 }: DropzoneProps = defaultProps) {
-  const allowedMimeTypes = accept?.join(", ");
-  const hiddenFileInput = useRef<HTMLInputElement>(null);
+  const { acceptedFiles, rejectedFiles, getRootProps, getInputProps } = useDropzone({
+    multiple: false,
+    accept: {
+      "text/plain": [".txt", ".csv"],
+    },
+  });
 
-  const handleClick = () => {
-    hiddenFileInput.current?.click();
-  };
-
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    onUpload?.(files);
-  };
+  console.log({ acceptedFiles, rejectedFiles });
 
   return (
-    <button
-      onClick={handleClick}
-      className={cn(
-        "w-full rounded-lg border-2 border-dashed border-gray-300 bg-muted p-8 text-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2",
-        className,
-      )}
+    <div
+      {...getRootProps({
+        className: cn(
+          "w-full rounded-lg border-2 border-dashed border-gray-300 bg-muted p-8 text-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2",
+          className,
+        ),
+      })}
     >
       <MimeTypeIcon mimeType={mimeType} />
       <p className="leading-7 [&:not(:first-child)]:mt-6">{description}</p>
-      <input
-        type="file"
-        multiple={multiple}
-        accept={allowedMimeTypes}
-        ref={hiddenFileInput}
-        onChange={handleChange}
-        style={{ display: "none" }}
-      />
-    </button>
+      <input {...getInputProps()} />
+    </div>
   );
 }
 
