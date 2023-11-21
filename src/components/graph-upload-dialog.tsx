@@ -102,6 +102,7 @@ export function GraphUploadDialog() {
     };
 
     console.log({ graph });
+    rhfGraphUpload.reset();
     setOpen(false);
   };
 
