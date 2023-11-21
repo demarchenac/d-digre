@@ -53,7 +53,7 @@ export type DropzoneAction = Partial<DropzoneState> & { type: DropzoneActionType
 export type AcceptAttribute = Record<MimeType, DotExtension[]>;
 
 export type UseDropzoneProps = {
-  accept: Partial<AcceptAttribute>;
+  accept?: Partial<AcceptAttribute>;
   multiple?: boolean;
   preventDropOnDocument?: boolean;
   noClick?: boolean;

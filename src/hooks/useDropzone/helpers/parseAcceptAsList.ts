@@ -7,7 +7,7 @@ import { isMimeType } from "./isMimeType";
  * @param {AcceptProp} accept
  * @returns {string}
  */
-export function parseAcceptAsList(accept: Partial<AcceptAttribute>): string | undefined {
+export function parseAcceptAsList(accept?: Partial<AcceptAttribute>): string | undefined {
   if (accept) {
     return (
       Object.entries(accept)
