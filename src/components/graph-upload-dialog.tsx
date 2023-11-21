@@ -14,9 +14,22 @@ import {
 import { Dropzone } from "~/components/ui/dropzone";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
+import { range } from "~/lib/helpers";
+
+type Node = {
+  id: number;
+  outgoing: number[];
+  incoming: number[];
+};
+
+type Link = {
+  source: number;
+  target: number;
+  weight: number;
+};
 
 export function GraphUploadDialog() {
-  const [hasOffset, setHasOffset] = useState(false);
+  const [startsAt1, setStartsAt1] = useState(false);
 
   const onUpload = async (files: File[]) => {
     if (!files) return;
@@ -30,23 +43,58 @@ export function GraphUploadDialog() {
       .map((line) => line.replace(/\r/, "").trim().replace(/\s+/g, " "))
       .filter((line) => line.trim().length > 0);
 
-    const graph = {
-      hasOffset,
+    const metadata = {
+      startsAt1,
       description: lines.at(0),
+      source: startsAt1 ? 1 : 0,
       sinks: lines.at(1)?.split(" ")?.map(Number),
       adjacency: lines.slice(2)?.map((row) => row.split(" ").map(Number)),
     };
 
-    const numberOfVertexes = graph.adjacency[0]?.length ?? 0;
+    const numberOfVertexes = metadata.adjacency[0]?.length ?? 0;
     const isSquared =
-      graph.adjacency.length === numberOfVertexes &&
-      graph.adjacency.every((weights) => weights.length === numberOfVertexes);
+      metadata.adjacency.length === numberOfVertexes &&
+      metadata.adjacency.every((weights) => weights.length === numberOfVertexes);
 
     if (!isSquared) {
       console.error("Graph isn't squared");
       alert("Graph isn't squared");
       return;
     }
+
+    const increment = metadata.startsAt1 ? 1 : 0;
+    const nodeList = range(0 + increment, metadata.adjacency.length + increment);
+
+    const nodes: Node[] = nodeList.map((node) => ({
+      id: node,
+      outgoing: [],
+      incoming: [],
+    }));
+
+    const links: Link[] = [];
+    nodeList.forEach((source) =>
+      nodeList.forEach((target) => {
+        const link = {
+          source,
+          target,
+          weight: metadata.adjacency[source - increment]?.[target - increment] ?? 0,
+        };
+        if (link.weight > 0) links.push(link);
+      }),
+    );
+
+    links.forEach(({ source, target }) => {
+      nodes[source - increment]?.outgoing.push(target);
+      nodes[target - increment]?.incoming.push(source);
+    });
+
+    const graph = {
+      ...metadata,
+      nodes,
+      links,
+    };
+
+    console.log({ graph });
   };
 
   return (
@@ -67,8 +115,8 @@ export function GraphUploadDialog() {
             />
           </div>
           <div className="flex items-center space-x-2">
-            <Switch id="vertex-offset" checked={hasOffset} onCheckedChange={setHasOffset} />
-            <Label htmlFor="vertex-offset">Offset vertex index by 1</Label>
+            <Switch id="vertex-offset" checked={startsAt1} onCheckedChange={setStartsAt1} />
+            <Label htmlFor="vertex-offset">Nodes start at &quot;1&quot;</Label>
           </div>
         </DialogHeader>
         <DialogFooter>
