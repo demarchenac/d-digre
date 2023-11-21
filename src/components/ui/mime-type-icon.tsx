@@ -1,6 +1,6 @@
 import { Files, Sheet } from "lucide-react";
 
-const iconClasses = "mx-auto h-12 w-12 text-gray-400";
+const iconClasses = "h-8 w-8 text-gray-400";
 
 export type MimeType = "*" | "text/plain" | "text/csv";
 

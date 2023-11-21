@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -11,10 +10,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { Dropzone } from "~/components/ui/dropzone";
-import { Switch } from "~/components/ui/switch";
-import { Label } from "~/components/ui/label";
 import { range } from "~/lib/helpers";
+import { SwitchController } from "./rhf/switch-controller";
+import { FormProvider, useForm, type SubmitHandler } from "react-hook-form";
+import { DropzoneController } from "./rhf/dropzone-controller";
+import { useState } from "react";
 
 type Node = {
   id: number;
@@ -28,13 +28,20 @@ type Link = {
   weight: number;
 };
 
+type FormValues = {
+  startsAt1: boolean;
+  graphFiles: File[];
+};
+
 export function GraphUploadDialog() {
-  const [startsAt1, setStartsAt1] = useState(false);
+  const [open, setOpen] = useState(false);
+  const rhfGraphUpload = useForm<FormValues>();
+  const { control } = rhfGraphUpload;
 
-  const onUpload = async (files: File[]) => {
-    if (!files) return;
+  const onSubmit: SubmitHandler<FormValues> = async ({ graphFiles, startsAt1 }) => {
+    if (!graphFiles) return;
 
-    const [file] = files;
+    const [file] = graphFiles;
     if (!file) return;
 
     const contents = await file.text();
@@ -95,33 +102,35 @@ export function GraphUploadDialog() {
     };
 
     console.log({ graph });
+    setOpen(false);
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost">Import Graph</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Upload Graph</DialogTitle>
-          <DialogDescription>
-            Upload your directed graph with weights as a CSV file
-          </DialogDescription>
-          <div className="flex flex-col pb-2 pt-4">
-            <Dropzone
-              description="Drag a file to upload your directed graph with weights"
-              onUpload={onUpload}
-            />
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch id="vertex-offset" checked={startsAt1} onCheckedChange={setStartsAt1} />
-            <Label htmlFor="vertex-offset">Nodes start at &quot;1&quot;</Label>
-          </div>
-        </DialogHeader>
-        <DialogFooter>
-          <Button type="submit">Upload</Button>
-        </DialogFooter>
+        <FormProvider {...rhfGraphUpload}>
+          <form className="flex flex-col" onSubmit={rhfGraphUpload.handleSubmit(onSubmit)}>
+            <DialogHeader>
+              <DialogTitle>Upload Graph</DialogTitle>
+              <DialogDescription>
+                Upload your directed graph with weights as a CSV file
+              </DialogDescription>
+              <div className="flex flex-col pb-2 pt-4">
+                <DropzoneController
+                  name="graphFiles"
+                  description="Drag a file to upload your directed graph with weights"
+                />
+              </div>
+              <SwitchController name="startsAt1" label={'Nodes starts at "1"'} control={control} />
+            </DialogHeader>
+            <DialogFooter>
+              <Button type="submit">Upload</Button>
+            </DialogFooter>
+          </form>
+        </FormProvider>
       </DialogContent>
     </Dialog>
   );

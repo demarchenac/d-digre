@@ -6,6 +6,7 @@ import { MimeTypeIcon } from "./mime-type-icon";
 
 export type DropzoneProps = {
   multiple?: boolean;
+  id?: string;
   className?: string;
   description?: string;
   accept?: Partial<AcceptAttribute>;
@@ -23,25 +24,35 @@ const defaultProps: DropzoneProps = {
 };
 
 export function Dropzone({
+  id,
   multiple = defaultProps.multiple,
   className = defaultProps.className,
   description = defaultProps.description,
   accept = defaultProps.accept,
   onUpload = defaultProps.onUpload,
 }: DropzoneProps = defaultProps) {
-  const { getRootProps, getInputProps } = useDropzone({ multiple, accept, onDrop: onUpload });
+  const {
+    acceptedFiles: accepted,
+    getRootProps,
+    getInputProps,
+  } = useDropzone({ multiple, accept, onDrop: onUpload });
+  const [file] = accepted;
   const [mime] = Object.keys(accept ?? {});
 
   return (
     <div
       {...getRootProps({
+        id,
         className: cn(
           "cursor-pointer w-full rounded-lg border-2 border-dashed border-gray-300 bg-muted p-8 text-center hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2",
           className,
         ),
       })}
     >
-      <MimeTypeIcon mimeType={mime} />
+      <div className="flex items-center justify-center gap-2">
+        <MimeTypeIcon mimeType={mime} />
+        {!multiple && file && <p className="text-sm text-muted-foreground">{file.name}</p>}
+      </div>
       <p className="leading-7 [&:not(:first-child)]:mt-6">{description}</p>
       <input {...getInputProps()} />
     </div>
