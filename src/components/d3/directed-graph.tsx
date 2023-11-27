@@ -190,7 +190,7 @@ export function DirectedGraph({ data, ...config }: ForceGraphProps) {
               <text
                 id={`${linkId}-text`}
                 textAnchor="middle"
-                className="fill-zinc-500"
+                className="fill-zinc-200 dark:fill-zinc-500"
                 pointerEvents="none"
               >
                 {link.weight}
@@ -202,7 +202,12 @@ export function DirectedGraph({ data, ...config }: ForceGraphProps) {
       <g id="nodes" stroke="#fff" strokeWidth={strokeWidth}>
         {nodes.map((node) => (
           <g key={node.id}>
-            <circle key={node.id} r={radius} fill={color(node.set ?? 2)} />
+            <circle
+              key={node.id}
+              r={radius}
+              fill={color(node.set ?? 2)}
+              className="cursor-pointer"
+            />
             <text
               textAnchor="middle"
               className="bg-slate-500 fill-slate-50 stroke-none"
