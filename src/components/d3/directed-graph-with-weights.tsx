@@ -83,7 +83,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
 
         nodeId.attr("x", (d) => d.x!).attr("y", (d) => d.y! + 6);
 
-        link.classed("stroke-slate-800", true).attr("d", (link) => {
+        link.attr("d", (link) => {
           const diffX = getX(link.target) - getX(link.source);
           const diffY = getY(link.target) - getY(link.source);
 
@@ -181,7 +181,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
                 </marker>
               </defs>
               <path
-                className="link"
+                className="link stroke-slate-800"
                 strokeWidth={3}
                 markerEnd="url(#arrow)"
                 strokeLinecap="round"
