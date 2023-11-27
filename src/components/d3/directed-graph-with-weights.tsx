@@ -83,7 +83,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
 
         nodeId.attr("x", (d) => d.x!).attr("y", (d) => d.y! + 6);
 
-        link.classed("stroke-slate-800", true).attr("d", (link) => {
+        link.attr("d", (link) => {
           const diffX = getX(link.target) - getX(link.source);
           const diffY = getY(link.target) - getY(link.source);
 
@@ -104,10 +104,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
           return toDraw;
         });
 
-        linkWeight
-          .attr("x", getMiddleX)
-          .attr("y", (link) => getMiddleY(link) + 4)
-          .attr("style", "font-size: 10px;");
+        linkWeight.attr("x", getMiddleX).attr("y", (link) => getMiddleY(link) + 4);
 
         linkWeightBackground.each(function (link) {
           const boundingBox = getLinkTextBB(link);
@@ -181,7 +178,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
                 </marker>
               </defs>
               <path
-                className="link"
+                className="link stroke-slate-800"
                 strokeWidth={3}
                 markerEnd="url(#arrow)"
                 strokeLinecap="round"
@@ -197,7 +194,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
               <text
                 id={`${linkId}-text`}
                 textAnchor="middle"
-                className={cn({
+                className={cn("text-[10px]", {
                   "fill-zinc-200 dark:fill-zinc-500": data.renderWeights,
                   "fill-none": !data.renderWeights,
                 })}
