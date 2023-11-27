@@ -19,6 +19,7 @@ export type STCut = {
 
 export type Graph = {
   startsAt1: boolean;
+  renderWeights: boolean;
   description: string;
   sources: number[];
   targets: number[];

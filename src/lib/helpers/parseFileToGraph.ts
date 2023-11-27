@@ -80,6 +80,7 @@ export async function parseFileToGraph({
 
   const graph: Graph = {
     ...metadata,
+    renderWeights: false,
     sources,
     targets,
     nodes,

@@ -3,6 +3,7 @@
 import * as d3 from "d3";
 import { useD3Render } from "~/hooks";
 import { parseGraphToId, parseLinkToId } from "~/lib/helpers";
+import { cn } from "~/lib/utils";
 import type { Graph, SimulationLink, SimulationNode } from "~/types";
 
 type ForceGraphProps = {
@@ -48,11 +49,12 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
         .data(nodes);
 
       const link = svg.selectAll<SVGLineElement, SimulationLink>(".link").data(links);
-      // const rightLink = svg.selectAll<SVGLineElement, SimulationLink>("line.right").data(links);
+
       const linkWeightBackground = svg
         .select("#links")
         .selectAll<SVGRectElement, SimulationNode>("rect")
         .data(links);
+
       const linkWeight = svg
         .select("#links")
         .selectAll<SVGTextElement, SimulationNode>("text")
@@ -71,8 +73,9 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
         const getLinkTextBB = (link: SimulationLink) => {
           const textId = parseLinkToId(link) + "-text";
           const text = document.getElementById(textId);
-          const textSvg = text! as unknown as SVGGraphicsElement;
+          if (!text) return undefined;
 
+          const textSvg = text as unknown as SVGGraphicsElement;
           return textSvg.getBBox();
         };
 
@@ -108,13 +111,13 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
 
         linkWeightBackground.each(function (link) {
           const boundingBox = getLinkTextBB(link);
+          if (!boundingBox) return;
+
           d3.select(this)
             .attr("x", boundingBox.x - 4)
             .attr("y", boundingBox.y - 4)
             .attr("width", boundingBox.width + 8)
-            .attr("height", boundingBox.height + 8)
-            .attr("rx", 4)
-            .classed("fill-slate-800 stroke-1 stroke-zinc-500", true);
+            .attr("height", boundingBox.height + 8);
         });
       }
 
@@ -181,13 +184,23 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
                 className="link"
                 strokeWidth={3}
                 markerEnd="url(#arrow)"
-                stroke-linecap="round"
+                strokeLinecap="round"
               />
-              <rect id={`${linkId}-text-background`} />
+              <rect
+                rx="4"
+                id={`${linkId}-text-background`}
+                className={cn({
+                  "fill-slate-800 stroke-zinc-500 stroke-1": data.renderWeights,
+                  "fill-none stroke-none": !data.renderWeights,
+                })}
+              />
               <text
                 id={`${linkId}-text`}
                 textAnchor="middle"
-                className="fill-zinc-200 dark:fill-zinc-500"
+                className={cn({
+                  "fill-zinc-200 dark:fill-zinc-500": data.renderWeights,
+                  "fill-none": !data.renderWeights,
+                })}
                 pointerEvents="none"
               >
                 {link.weight}
