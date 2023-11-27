@@ -185,7 +185,12 @@ export function DirectedGraph({ data, ...config }: ForceGraphProps) {
                   <path d="M0,0L0,10L10,5" className="fill-slate-800" />
                 </marker>
               </defs>
-              <path className="link" strokeWidth={3} markerEnd="url(#arrow)" />
+              <path
+                className="link"
+                strokeWidth={3}
+                markerEnd="url(#arrow)"
+                stroke-linecap="round"
+              />
               <rect id={`${linkId}-text-background`} />
               <text
                 id={`${linkId}-text`}
