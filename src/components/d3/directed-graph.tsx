@@ -25,6 +25,7 @@ const getLinkId = (link: SimulationLink) => {
  * Inspired from:
  * - https://www.d3indepth.com/force-layout/
  * - https://stackoverflow.com/questions/76924982/d3-force-graph-in-solidjs-with-typescript
+ * - https://codesandbox.io/p/sandbox/d3-react-force-graph-les-miserables-forked-twqr4d?file=%2Fsrc%2FForceGraph.js%3A68%2C22-68%2C31
  * - https://balramchavan.medium.com/building-d3-interactive-network-graph-d3-force-simulation-react-typescript-b17e71f03913
  * - https://github.com/ultrasonicsoft/d3-network-graph-editor/blob/main/src/App.tsx
  * - https://stackoverflow.com/questions/32966823/links-and-arrowheads-to-terminate-at-borders-of-nodes-in-d3
