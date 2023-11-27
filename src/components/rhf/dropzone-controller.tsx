@@ -1,3 +1,5 @@
+"use client";
+
 import { useController, type FieldValues, type UseControllerProps } from "react-hook-form";
 import { Dropzone, type DropzoneProps } from "../ui/dropzone";
 

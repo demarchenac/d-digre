@@ -1,5 +1,9 @@
 "use client";
 
+import { useState } from "react";
+import { FormProvider, useForm, type SubmitHandler } from "react-hook-form";
+import { Loader2 } from "lucide-react";
+import { useSetAtom, useStore } from "jotai";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -10,23 +14,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { range } from "~/lib/helpers";
-import { SwitchController } from "./rhf/switch-controller";
-import { FormProvider, useForm, type SubmitHandler } from "react-hook-form";
-import { DropzoneController } from "./rhf/dropzone-controller";
-import { useState } from "react";
-
-type Node = {
-  id: number;
-  outgoing: number[];
-  incoming: number[];
-};
-
-type Link = {
-  source: number;
-  target: number;
-  weight: number;
-};
+import { DropzoneController } from "~/components/rhf/dropzone-controller";
+import { SwitchController } from "~/components/rhf/switch-controller";
+import { parseFileToGraph } from "~/lib/helpers";
+import { graphAtom, stateAtom } from "~/lib/jotai";
 
 type FormValues = {
   startsAt1: boolean;
@@ -35,73 +26,23 @@ type FormValues = {
 
 export function GraphUploadDialog() {
   const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const rhfGraphUpload = useForm<FormValues>();
+  const setState = useSetAtom(stateAtom, { store: useStore() });
+  const setGraph = useSetAtom(graphAtom, { store: useStore() });
   const { control } = rhfGraphUpload;
 
   const onSubmit: SubmitHandler<FormValues> = async ({ graphFiles, startsAt1 }) => {
     if (!graphFiles) return;
 
+    setIsLoading(true);
     const [file] = graphFiles;
-    if (!file) return;
+    const graph = await parseFileToGraph({ file, startsAt1 });
 
-    const contents = await file.text();
-    const lines = contents
-      .split(/\n/g)
-      .map((line) => line.replace(/\r/, "").trim().replace(/\s+/g, " "))
-      .filter((line) => line.trim().length > 0);
+    setGraph(graph);
+    setState("with-graph");
 
-    const metadata = {
-      startsAt1,
-      description: lines.at(0),
-      source: startsAt1 ? 1 : 0,
-      sinks: lines.at(1)?.split(" ")?.map(Number),
-      adjacency: lines.slice(2)?.map((row) => row.split(" ").map(Number)),
-    };
-
-    const numberOfVertexes = metadata.adjacency[0]?.length ?? 0;
-    const isSquared =
-      metadata.adjacency.length === numberOfVertexes &&
-      metadata.adjacency.every((weights) => weights.length === numberOfVertexes);
-
-    if (!isSquared) {
-      console.error("Graph isn't squared");
-      alert("Graph isn't squared");
-      return;
-    }
-
-    const increment = metadata.startsAt1 ? 1 : 0;
-    const nodeList = range(0 + increment, metadata.adjacency.length + increment);
-
-    const nodes: Node[] = nodeList.map((node) => ({
-      id: node,
-      outgoing: [],
-      incoming: [],
-    }));
-
-    const links: Link[] = [];
-    nodeList.forEach((source) =>
-      nodeList.forEach((target) => {
-        const link = {
-          source,
-          target,
-          weight: metadata.adjacency[source - increment]?.[target - increment] ?? 0,
-        };
-        if (link.weight > 0) links.push(link);
-      }),
-    );
-
-    links.forEach(({ source, target }) => {
-      nodes[source - increment]?.outgoing.push(target);
-      nodes[target - increment]?.incoming.push(source);
-    });
-
-    const graph = {
-      ...metadata,
-      nodes,
-      links,
-    };
-
-    console.log({ graph });
+    setIsLoading(false);
     rhfGraphUpload.reset();
     setOpen(false);
   };
@@ -128,7 +69,10 @@ export function GraphUploadDialog() {
               <SwitchController name="startsAt1" label={'Nodes starts at "1"'} control={control} />
             </DialogHeader>
             <DialogFooter>
-              <Button type="submit">Upload</Button>
+              <Button type="submit">
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Upload
+              </Button>
             </DialogFooter>
           </form>
         </FormProvider>

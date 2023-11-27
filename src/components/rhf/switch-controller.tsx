@@ -1,3 +1,5 @@
+"use client";
+
 import { useController, type FieldValues, type UseControllerProps } from "react-hook-form";
 import { Switch } from "../ui/switch";
 import { Label } from "../ui/label";

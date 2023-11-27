@@ -1,9 +1,11 @@
 import "~/styles/globals.css";
+
 import { Inter } from "next/font/google";
 import { cn } from "~/lib/utils";
-import { ThemeProvider } from "~/components/theme-provider";
 import { ThemeToggle } from "~/components/ui/theme-toggle";
-import { GraphUploadDialog } from "~/components/graph-upload-dialog";
+import { ThemeProvider } from "~/components/theme-provider";
+import { JotaiProvider } from "~/components/jotai-provider";
+import { FloatingControls } from "~/components/floating-controls";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,20 +22,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={cn("min-h-screen bg-background font-sans antialiased", inter.variable)}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <header className="absolute left-0 top-0 flex w-screen justify-end  p-4">
-            <ThemeToggle />
-          </header>
-          <aside className="absolute left-4 top-4 flex min-w-[200px] max-w-xs flex-col rounded-lg p-4 ring-1 ring-inset ring-white/10">
-            <GraphUploadDialog />
-          </aside>
-          <main>{children}</main>
-        </ThemeProvider>
+        <JotaiProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <header className="absolute left-0 top-0 flex w-screen justify-end  p-4">
+              <ThemeToggle />
+            </header>
+            <aside className="absolute left-4 top-4 z-10 flex min-w-[200px] max-w-xs flex-col rounded-lg p-4 ring-1 ring-inset ring-white/10">
+              <FloatingControls />
+            </aside>
+            <main>{children}</main>
+          </ThemeProvider>
+        </JotaiProvider>
       </body>
     </html>
   );
