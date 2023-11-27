@@ -2,23 +2,13 @@
 
 import * as d3 from "d3";
 import { useD3Render } from "~/hooks";
+import { parseGraphToId, parseLinkToId } from "~/lib/helpers";
 import type { Graph, SimulationLink, SimulationNode } from "~/types";
 
 type ForceGraphProps = {
   data: Graph;
   height?: number;
   width?: number;
-};
-
-const getLinkId = (link: SimulationLink) => {
-  const unsafeSource = link.source as Record<"id", number>;
-  const unsafeTarget = link.target as Record<"id", number>;
-
-  if (typeof unsafeSource.id === "number" && typeof unsafeTarget.id === "number") {
-    return `${unsafeSource.id}-${unsafeTarget.id}=${link.weight}`;
-  }
-
-  return `${link.source}-${link.target}=${link.weight}`;
 };
 
 /**
@@ -32,11 +22,12 @@ const getLinkId = (link: SimulationLink) => {
  * - https://stackoverflow.com/questions/16660193/get-arrowheads-to-point-at-outer-edge-of-node-in-d3
  * - https://stackoverflow.com/questions/52358115/d3-force-graph-with-arrows-and-curved-edges-shorten-links-so-arrow-doesnt-over
  */
-export function DirectedGraph({ data, ...config }: ForceGraphProps) {
+export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
   const strokeWidth = 2;
   const radius = 15;
   const height = config.height ?? window.innerHeight;
   const width = config.width ?? window.innerWidth;
+  const graphId = parseGraphToId(data);
   const color = d3.scaleOrdinal([1, 2, 3], ["#0ea5e9", "#64748b", "#22c55e"]);
 
   const nodes = data.nodes.map((node) => ({ ...node })) as SimulationNode[];
@@ -78,7 +69,7 @@ export function DirectedGraph({ data, ...config }: ForceGraphProps) {
         const getMiddleX = (link: SimulationLink) => (getX(link.source) + getX(link.target)) / 2;
         const getMiddleY = (link: SimulationLink) => (getY(link.source) + getY(link.target)) / 2;
         const getLinkTextBB = (link: SimulationLink) => {
-          const textId = getLinkId(link) + "-text";
+          const textId = parseLinkToId(link) + "-text";
           const text = document.getElementById(textId);
           const textSvg = text! as unknown as SVGGraphicsElement;
 
@@ -156,6 +147,7 @@ export function DirectedGraph({ data, ...config }: ForceGraphProps) {
           .on("end", onDragEnd),
       );
     },
+    dependencies: [graphId],
   });
 
   return (
@@ -168,7 +160,7 @@ export function DirectedGraph({ data, ...config }: ForceGraphProps) {
       </text>
       <g id="links">
         {links.map((link) => {
-          const linkId = getLinkId(link);
+          const linkId = parseLinkToId(link);
           return (
             <g key={linkId}>
               <defs>

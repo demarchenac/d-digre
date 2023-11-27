@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { FormProvider, useForm, type SubmitHandler } from "react-hook-form";
 import { Loader2 } from "lucide-react";
-import { useSetAtom, useStore } from "jotai";
+import { useAtom, useSetAtom, useStore } from "jotai";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -28,7 +28,7 @@ export function GraphUploadDialog() {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const rhfGraphUpload = useForm<FormValues>();
-  const setState = useSetAtom(stateAtom, { store: useStore() });
+  const [state, setState] = useAtom(stateAtom, { store: useStore() });
   const setGraph = useSetAtom(graphAtom, { store: useStore() });
   const { control } = rhfGraphUpload;
 
@@ -50,7 +50,7 @@ export function GraphUploadDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost">Import Graph</Button>
+        <Button variant="ghost">{state === "no-graph" ? "Import" : "Import another"} graph</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <FormProvider {...rhfGraphUpload}>

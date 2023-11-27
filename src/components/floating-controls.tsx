@@ -7,7 +7,10 @@ import { GraphUploadDialog } from "./graph-upload-dialog";
 export function FloatingControls() {
   const state = useAtomValue(stateAtom, { store: useStore() });
 
-  if (state === "no-graph") return <GraphUploadDialog />;
-
-  return <p>Un-handled state: {state}</p>;
+  return (
+    <>
+      Current state: {state}
+      <GraphUploadDialog />
+    </>
+  );
 }
