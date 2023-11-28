@@ -35,16 +35,14 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
   const nodes = data.nodes.map((node) => ({ ...node })) as SimulationNode[];
   const links = data.links.map((d) => ({ ...d })) as SimulationLink[];
 
-  const svgRef = useD3Render({
-    render(svg) {
+  const { svgRef, zoomRef } = useD3Render({
+    render(svg, zoomG) {
       const simulation = d3
         .forceSimulation(nodes)
         .force("link", d3.forceLink(links).distance(150))
         .force("collide", d3.forceCollide().radius(radius * 2))
         .force("charge", d3.forceManyBody().strength(-(radius * 2 - 1)))
         .force("center", d3.forceCenter(width / 2, height / 2));
-
-      const zoom = svg.select(".zoom");
 
       const node = svg.selectAll<SVGCircleElement, SimulationNode>("circle").data(nodes);
       const nodeId = svg
@@ -150,14 +148,19 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
           .on("end", onDragEnd),
       );
 
-      function zoomed(e: d3.D3ZoomEvent<SVGSVGElement, unknown>) {
-        zoom.attr(
-          "transform",
-          `translate(${e.transform.x},${e.transform.y}) scale(${e.transform.k})`,
-        );
-      }
+      if (zoomG) {
+        zoomG.style("transform-origin", "50% 50% 0");
 
-      svg.call(d3.zoom<SVGSVGElement, unknown>().on("zoom", zoomed));
+        const onZoom = (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+          zoomG.attr(
+            "transform",
+            `translate(${event.transform.x},${event.transform.y}) scale(${event.transform.k})`,
+          );
+        };
+
+        const zoomHandler = d3.zoom<SVGSVGElement, unknown>().on("zoom", onZoom);
+        svg.call(zoomHandler);
+      }
     },
     dependencies: [graphId],
   });
@@ -170,7 +173,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
       <text x="16" y="97.5%" className="fill-slate-500 stroke-1 text-xs" pointerEvents="none">
         {`${width}px x ${height}px`}
       </text>
-      <g className="zoom">
+      <g ref={zoomRef}>
         <g id="links">
           {links.map((link) => {
             const linkId = parseLinkToId(link);
