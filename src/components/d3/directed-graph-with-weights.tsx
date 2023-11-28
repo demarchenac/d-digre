@@ -22,6 +22,7 @@ type ForceGraphProps = {
  * - https://stackoverflow.com/questions/32966823/links-and-arrowheads-to-terminate-at-borders-of-nodes-in-d3
  * - https://stackoverflow.com/questions/16660193/get-arrowheads-to-point-at-outer-edge-of-node-in-d3
  * - https://stackoverflow.com/questions/52358115/d3-force-graph-with-arrows-and-curved-edges-shorten-links-so-arrow-doesnt-over
+ * - https://observablehq.com/@ben-tanen/a-tutorial-to-using-d3-force-from-someone-who-just-learned-ho
  */
 export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
   const strokeWidth = 2;
@@ -38,9 +39,12 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
     render(svg) {
       const simulation = d3
         .forceSimulation(nodes)
-        .force("charge", d3.forceManyBody().strength(-1000))
-        .force("center", d3.forceCenter(width / 2, height / 2))
-        .force("link", d3.forceLink<SimulationNode, SimulationLink>(links));
+        .force("link", d3.forceLink(links).distance(150))
+        .force("collide", d3.forceCollide().radius(radius * 2))
+        .force("charge", d3.forceManyBody().strength(-(radius * 2 - 1)))
+        .force("center", d3.forceCenter(width / 2, height / 2));
+
+      const zoom = svg.select(".zoom");
 
       const node = svg.selectAll<SVGCircleElement, SimulationNode>("circle").data(nodes);
       const nodeId = svg
@@ -62,8 +66,8 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
 
       function ticked() {
         // The source property comes from the SimulationLinkDatum interface, and by default,
-        // has a type of TypeOfNode | string | number, where TypeOfNode is FDGNode in this example
-        // so we need to make an as assertion. The x,y properties added by the SimulationNodeDatum
+        // has a type of TypeOfNode | string | number, where TypeOfNode is SimulationNode, so we
+        // need to make an `as assertion`. The x,y properties added by the SimulationNodeDatum
         // interface are of type number | undefined, so a non-null assertion operator is used
 
         const getX = (value: unknown) => (value as SimulationNode).x!;
@@ -134,9 +138,8 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
       }
 
       function onDragEnd(event: d3.D3DragEvent<SVGCircleElement, SimulationNode, SimulationNode>) {
+        // this function overrides the default d3.drag behavior in order to fix nodes
         if (!event.active) simulation.alphaTarget(0);
-        event.subject.fx = null;
-        event.subject.fy = null;
       }
 
       node.call(
@@ -146,6 +149,15 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
           .on("drag", onDrag)
           .on("end", onDragEnd),
       );
+
+      function zoomed(e: d3.D3ZoomEvent<SVGSVGElement, unknown>) {
+        zoom.attr(
+          "transform",
+          `translate(${e.transform.x},${e.transform.y}) scale(${e.transform.k})`,
+        );
+      }
+
+      svg.call(d3.zoom<SVGSVGElement, unknown>().on("zoom", zoomed));
     },
     dependencies: [graphId],
   });
@@ -158,72 +170,74 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
       <text x="16" y="97.5%" className="fill-slate-500 stroke-1 text-xs" pointerEvents="none">
         {`${width}px x ${height}px`}
       </text>
-      <g id="links">
-        {links.map((link) => {
-          const linkId = parseLinkToId(link);
-          return (
-            <g key={linkId}>
-              <defs>
-                <marker
-                  id="arrow"
-                  markerWidth="5"
-                  markerHeight="5"
-                  refX="8"
-                  refY="5"
-                  orient="auto"
-                  markerUnits="strokeWidth"
-                  viewBox="0 0 10 10"
+      <g className="zoom">
+        <g id="links">
+          {links.map((link) => {
+            const linkId = parseLinkToId(link);
+            return (
+              <g key={linkId}>
+                <defs>
+                  <marker
+                    id="arrow"
+                    markerWidth="5"
+                    markerHeight="5"
+                    refX="8"
+                    refY="5"
+                    orient="auto"
+                    markerUnits="strokeWidth"
+                    viewBox="0 0 10 10"
+                  >
+                    <path d="M0,0L0,10L10,5" className="fill-slate-800" />
+                  </marker>
+                </defs>
+                <path
+                  className="link stroke-slate-800"
+                  strokeWidth={3}
+                  markerEnd="url(#arrow)"
+                  strokeLinecap="round"
+                />
+                <rect
+                  rx="4"
+                  id={`${linkId}-text-background`}
+                  className={cn({
+                    "fill-slate-800 stroke-zinc-500 stroke-1": data.renderWeights,
+                    "fill-none stroke-none": !data.renderWeights,
+                  })}
+                />
+                <text
+                  id={`${linkId}-text`}
+                  textAnchor="middle"
+                  className={cn("text-[10px]", {
+                    "fill-zinc-200 dark:fill-zinc-500": data.renderWeights,
+                    "fill-none": !data.renderWeights,
+                  })}
+                  pointerEvents="none"
                 >
-                  <path d="M0,0L0,10L10,5" className="fill-slate-800" />
-                </marker>
-              </defs>
-              <path
-                className="link stroke-slate-800"
-                strokeWidth={3}
-                markerEnd="url(#arrow)"
-                strokeLinecap="round"
-              />
-              <rect
-                rx="4"
-                id={`${linkId}-text-background`}
-                className={cn({
-                  "fill-slate-800 stroke-zinc-500 stroke-1": data.renderWeights,
-                  "fill-none stroke-none": !data.renderWeights,
-                })}
+                  {link.weight}
+                </text>
+              </g>
+            );
+          })}
+        </g>
+        <g id="nodes" stroke="#fff" strokeWidth={strokeWidth}>
+          {nodes.map((node) => (
+            <g key={node.id}>
+              <circle
+                key={node.id}
+                r={radius}
+                fill={color(node.set ?? 2)}
+                className="cursor-pointer"
               />
               <text
-                id={`${linkId}-text`}
                 textAnchor="middle"
-                className={cn("text-[10px]", {
-                  "fill-zinc-200 dark:fill-zinc-500": data.renderWeights,
-                  "fill-none": !data.renderWeights,
-                })}
+                className="bg-slate-500 fill-slate-50 stroke-none"
                 pointerEvents="none"
               >
-                {link.weight}
+                {data.startsAt1 ? node.id + 1 : node.id}
               </text>
             </g>
-          );
-        })}
-      </g>
-      <g id="nodes" stroke="#fff" strokeWidth={strokeWidth}>
-        {nodes.map((node) => (
-          <g key={node.id}>
-            <circle
-              key={node.id}
-              r={radius}
-              fill={color(node.set ?? 2)}
-              className="cursor-pointer"
-            />
-            <text
-              textAnchor="middle"
-              className="bg-slate-500 fill-slate-50 stroke-none"
-              pointerEvents="none"
-            >
-              {data.startsAt1 ? node.id + 1 : node.id}
-            </text>
-          </g>
-        ))}
+          ))}
+        </g>
       </g>
     </svg>
   );
