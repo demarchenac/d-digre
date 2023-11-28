@@ -31,8 +31,19 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
   const radius = 15;
   const height = config.height ?? window.innerHeight;
   const width = config.width ?? window.innerWidth;
+
+  const sourceColor = { fill: "fill-sky-500", stroke: "stroke-sky-500" };
+  const targetColor = { fill: "fill-green-500", stroke: "stroke-green-500" };
+  const middleColor = {
+    fill: { default: "fill-slate-800", highlight: "fill-amber-500", marker: "fill-slate-800" },
+    stroke: { default: "stroke-slate-800", highlight: "stroke-amber-800" },
+  };
+
   const graphId = parseGraphToId(data);
-  const color = d3.scaleOrdinal([1, 2, 3], ["#0ea5e9", "#64748b", "#22c55e"]);
+  const color = d3.scaleOrdinal(
+    [1, 2, 3],
+    [sourceColor.fill, middleColor.fill.default, targetColor.fill],
+  );
 
   const nodes = data.nodes.map((node) => ({ ...node })) as SimulationNode[];
   const links = data.links.map((d) => ({ ...d })) as SimulationLink[];
@@ -46,7 +57,55 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
         .force("charge", d3.forceManyBody().strength(-(radius * 2 - 1)))
         .force("center", d3.forceCenter(width / 2, height / 2));
 
-      const node = svg.selectAll<SVGCircleElement, SimulationNode>("circle").data(nodes);
+      const node = svg
+        .selectAll<SVGCircleElement, SimulationNode>("circle")
+        .data(nodes)
+        .on("mouseover", function onMouseOver(_event, node) {
+          const scaled = radius * 1.2;
+          const noInEdges = node.incoming.length === 0;
+          const noOutEdges = node.outgoing.length === 0;
+
+          d3.select(this).transition().duration(300).attr("r", scaled);
+          svg
+            .selectAll(`.link-source-${node.id}`)
+            .classed(middleColor.stroke.default, false)
+            .classed(noInEdges ? sourceColor.stroke : targetColor.stroke, true);
+          svg
+            .selectAll(`.link-source-${node.id}-marker`)
+            .classed(middleColor.fill.marker, false)
+            .classed(noInEdges ? sourceColor.fill : targetColor.fill, true);
+          svg
+            .selectAll(`.link-target-${node.id}`)
+            .classed(middleColor.stroke.default, false)
+            .classed(noOutEdges ? targetColor.stroke : sourceColor.stroke, true);
+          svg
+            .selectAll(`.link-target-${node.id}-marker`)
+            .classed(middleColor.fill.marker, false)
+            .classed(noOutEdges ? targetColor.fill : sourceColor.fill, true);
+        })
+        .on("mouseout", function onMouseOut(_event, node) {
+          const noInEdges = node.incoming.length === 0;
+          const noOutEdges = node.outgoing.length === 0;
+
+          d3.select(this).transition().duration(300).attr("r", radius);
+          svg
+            .selectAll(`.link-source-${node.id}`)
+            .classed(middleColor.stroke.default, true)
+            .classed(noInEdges ? sourceColor.stroke : targetColor.stroke, false);
+          svg
+            .selectAll(`.link-source-${node.id}-marker`)
+            .classed(middleColor.fill.marker, true)
+            .classed(noInEdges ? sourceColor.fill : targetColor.fill, false);
+          svg
+            .selectAll(`.link-target-${node.id}`)
+            .classed(middleColor.stroke.default, true)
+            .classed(noOutEdges ? targetColor.stroke : sourceColor.stroke, false);
+          svg
+            .selectAll(`.link-target-${node.id}-marker`)
+            .classed(middleColor.fill.marker, true)
+            .classed(noOutEdges ? targetColor.fill : sourceColor.fill, false);
+        });
+
       const nodeId = svg
         .select("#nodes")
         .selectAll<SVGCircleElement, SimulationNode>("text")
@@ -184,7 +243,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
               <g key={linkId}>
                 <defs>
                   <marker
-                    id="arrow"
+                    id={`link-arrow-from-${link.source}-to-${link.target}`}
                     markerWidth="5"
                     markerHeight="5"
                     refX="8"
@@ -193,20 +252,32 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
                     markerUnits="strokeWidth"
                     viewBox="0 0 10 10"
                   >
-                    <path d="M0,0L0,10L10,5" className="fill-slate-800" />
+                    <path
+                      d="M0,0L0,10L10,5"
+                      className={cn(
+                        middleColor.fill.default,
+                        "transition-[fill] duration-300",
+                        `link-source-${link.source}-marker link-target-${link.target}-marker`,
+                      )}
+                    />
                   </marker>
                 </defs>
                 <path
-                  className="link stroke-slate-800"
+                  className={cn(
+                    middleColor.stroke.default,
+                    "link transition-[stroke] duration-300",
+                    `link-source-${link.source} link-target-${link.target}`,
+                  )}
                   strokeWidth={3}
-                  markerEnd="url(#arrow)"
+                  markerEnd={`url(#link-arrow-from-${link.source}-to-${link.target})`}
                   strokeLinecap="round"
                 />
                 <rect
                   rx="4"
                   id={`${linkId}-text-background`}
                   className={cn({
-                    "fill-slate-800 stroke-zinc-500 stroke-1": data.renderWeights,
+                    [middleColor.fill.default]: data.renderWeights,
+                    "stroke-zinc-500 stroke-1": data.renderWeights,
                     "fill-none stroke-none": !data.renderWeights,
                   })}
                 />
@@ -231,14 +302,9 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
               <circle
                 key={node.id}
                 r={radius}
-                fill={color(node.set ?? 2)}
-                className="cursor-pointer"
+                className={cn("cursor-pointer", color(node.set ?? 2))}
               />
-              <text
-                textAnchor="middle"
-                className="bg-slate-500 fill-slate-50 stroke-none"
-                pointerEvents="none"
-              >
+              <text textAnchor="middle" className="fill-slate-50 stroke-none" pointerEvents="none">
                 {data.startsAt1 ? node.id + 1 : node.id}
               </text>
             </g>
