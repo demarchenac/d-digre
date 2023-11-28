@@ -21,6 +21,7 @@ type ForceGraphProps = {
  * - https://github.com/ultrasonicsoft/d3-network-graph-editor/blob/main/src/App.tsx
  * - https://stackoverflow.com/questions/32966823/links-and-arrowheads-to-terminate-at-borders-of-nodes-in-d3
  * - https://stackoverflow.com/questions/16660193/get-arrowheads-to-point-at-outer-edge-of-node-in-d3
+ * - https://stackoverflow.com/questions/47020108/d3-force-nodes-are-dragged-away-from-links-ticks-not-run
  * - https://stackoverflow.com/questions/52358115/d3-force-graph-with-arrows-and-curved-edges-shorten-links-so-arrow-doesnt-over
  * - https://observablehq.com/@ben-tanen/a-tutorial-to-using-d3-force-from-someone-who-just-learned-ho
  * - https://observablehq.com/@bumbeishvili/d3-v6-force-graph-with-natural-drag-attraction
