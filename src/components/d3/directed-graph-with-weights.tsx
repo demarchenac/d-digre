@@ -23,6 +23,7 @@ type ForceGraphProps = {
  * - https://stackoverflow.com/questions/16660193/get-arrowheads-to-point-at-outer-edge-of-node-in-d3
  * - https://stackoverflow.com/questions/52358115/d3-force-graph-with-arrows-and-curved-edges-shorten-links-so-arrow-doesnt-over
  * - https://observablehq.com/@ben-tanen/a-tutorial-to-using-d3-force-from-someone-who-just-learned-ho
+ * - https://observablehq.com/@bumbeishvili/d3-v6-force-graph-with-natural-drag-attraction
  */
 export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
   const strokeWidth = 2;
@@ -136,8 +137,9 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
       }
 
       function onDragEnd(event: d3.D3DragEvent<SVGCircleElement, SimulationNode, SimulationNode>) {
-        // this function overrides the default d3.drag behavior in order to fix nodes
         if (!event.active) simulation.alphaTarget(0);
+        event.subject.fx = event.subject.x;
+        event.subject.fy = event.subject.y;
       }
 
       node.call(
