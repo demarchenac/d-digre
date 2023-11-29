@@ -75,6 +75,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
           d3.select(this)
             .classed(colors.source.fill, noInEdges)
             .classed(colors.target.fill, noOutEdges)
+            .classed(colors.highlight.node.fill, false)
             .transition()
             .duration(300)
             .attr("r", scaled);
