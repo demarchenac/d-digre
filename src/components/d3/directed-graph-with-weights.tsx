@@ -75,6 +75,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
           d3.select(this)
             .classed(colors.source.fill, noInEdges)
             .classed(colors.target.fill, noOutEdges)
+            .classed(colors.default.fill, !noInEdges && !noOutEdges)
             .classed(colors.highlight.node.fill, false)
             .transition()
             .duration(300)
@@ -95,6 +96,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
           d3.select(this)
             .classed(colors.source.fill, noInEdges && !node.isSelected)
             .classed(colors.target.fill, noOutEdges && !node.isSelected)
+            .classed(colors.default.fill, !noInEdges && !noInEdges && !node.isSelected)
             .classed(colors.highlight.node.fill, node.isSelected)
             .transition()
             .duration(300)
@@ -112,12 +114,15 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
           d3.select(this)
             .classed(colors.source.fill, noInEdges && !node.isSelected)
             .classed(colors.target.fill, noOutEdges && !node.isSelected)
+            .classed(colors.default.fill, !noInEdges && !noInEdges && !node.isSelected)
             .classed(colors.highlight.node.fill, node.isSelected);
           svg
             .selectAll(`.link-source-${node.id}`)
+            .classed(colors.default.stroke, !noInEdges && !noInEdges && !node.isSelected)
             .classed(colors.highlight.edge.stroke, node.isSelected);
           svg
             .selectAll(`.link-source-${node.id}-marker`)
+            .classed(colors.default.fill, !noInEdges && !noInEdges && !node.isSelected)
             .classed(colors.highlight.edge.fill, node.isSelected);
         });
 
