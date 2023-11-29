@@ -32,17 +32,20 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
   const height = config.height ?? window.innerHeight;
   const width = config.width ?? window.innerWidth;
 
-  const sourceColor = { fill: "fill-sky-500", stroke: "stroke-sky-500" };
-  const targetColor = { fill: "fill-green-500", stroke: "stroke-green-500" };
-  const middleColor = {
-    fill: { default: "fill-slate-800", highlight: "fill-amber-500", marker: "fill-slate-800" },
-    stroke: { default: "stroke-slate-800", highlight: "stroke-amber-800" },
+  const colors = {
+    source: { fill: "!fill-sky-500", stroke: "!stroke-sky-500" },
+    target: { fill: "!fill-green-500", stroke: "!stroke-green-500" },
+    default: { fill: "fill-slate-800", stroke: "stroke-slate-800" },
+    highlight: {
+      node: { fill: "fill-amber-600" },
+      edge: { fill: "fill-amber-800", stroke: "stroke-amber-800" },
+    },
   };
 
   const graphId = parseGraphToId(data);
   const color = d3.scaleOrdinal(
     [1, 2, 3],
-    [sourceColor.fill, middleColor.fill.default, targetColor.fill],
+    [colors.source.fill, colors.default.fill, colors.target.fill],
   );
 
   const nodes = data.nodes.map((node) => ({ ...node })) as SimulationNode[];
@@ -64,46 +67,57 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
           const scaled = radius * 1.2;
           const noInEdges = node.incoming.length === 0;
           const noOutEdges = node.outgoing.length === 0;
+          const sourceEdgeClass = noInEdges ? colors.source.stroke : colors.target.stroke;
+          const sourceMarkerClass = noInEdges ? colors.source.fill : colors.target.fill;
+          const targetEdgeClass = noOutEdges ? colors.target.stroke : colors.source.stroke;
+          const targetMarkerClass = noOutEdges ? colors.target.fill : colors.source.fill;
 
-          d3.select(this).transition().duration(300).attr("r", scaled);
-          svg
-            .selectAll(`.link-source-${node.id}`)
-            .classed(middleColor.stroke.default, false)
-            .classed(noInEdges ? sourceColor.stroke : targetColor.stroke, true);
-          svg
-            .selectAll(`.link-source-${node.id}-marker`)
-            .classed(middleColor.fill.marker, false)
-            .classed(noInEdges ? sourceColor.fill : targetColor.fill, true);
-          svg
-            .selectAll(`.link-target-${node.id}`)
-            .classed(middleColor.stroke.default, false)
-            .classed(noOutEdges ? targetColor.stroke : sourceColor.stroke, true);
-          svg
-            .selectAll(`.link-target-${node.id}-marker`)
-            .classed(middleColor.fill.marker, false)
-            .classed(noOutEdges ? targetColor.fill : sourceColor.fill, true);
+          d3.select(this)
+            .classed(colors.source.fill, noInEdges)
+            .classed(colors.target.fill, noOutEdges)
+            .transition()
+            .duration(300)
+            .attr("r", scaled);
+          svg.selectAll(`.link-source-${node.id}`).classed(sourceEdgeClass, true);
+          svg.selectAll(`.link-source-${node.id}-marker`).classed(sourceMarkerClass, true);
+          svg.selectAll(`.link-target-${node.id}`).classed(targetEdgeClass, true);
+          svg.selectAll(`.link-target-${node.id}-marker`).classed(targetMarkerClass, true);
         })
         .on("mouseout", function onMouseOut(_event, node) {
           const noInEdges = node.incoming.length === 0;
           const noOutEdges = node.outgoing.length === 0;
+          const sourceEdgeClass = noInEdges ? colors.source.stroke : colors.target.stroke;
+          const sourceMarkerClass = noInEdges ? colors.source.fill : colors.target.fill;
+          const targetEdgeClass = noOutEdges ? colors.target.stroke : colors.source.stroke;
+          const targetMarkerClass = noOutEdges ? colors.target.fill : colors.source.fill;
 
-          d3.select(this).transition().duration(300).attr("r", radius);
+          d3.select(this)
+            .classed(colors.source.fill, noInEdges && !node.isSelected)
+            .classed(colors.target.fill, noOutEdges && !node.isSelected)
+            .classed(colors.highlight.node.fill, node.isSelected)
+            .transition()
+            .duration(300)
+            .attr("r", radius);
+          svg.selectAll(`.link-source-${node.id}`).classed(sourceEdgeClass, false);
+          svg.selectAll(`.link-source-${node.id}-marker`).classed(sourceMarkerClass, false);
+          svg.selectAll(`.link-target-${node.id}`).classed(targetEdgeClass, false);
+          svg.selectAll(`.link-target-${node.id}-marker`).classed(targetMarkerClass, false);
+        })
+        .on("click", function onClick(_event, node) {
+          node.isSelected = !node.isSelected;
+          const noInEdges = node.incoming.length === 0;
+          const noOutEdges = node.outgoing.length === 0;
+
+          d3.select(this)
+            .classed(colors.source.fill, noInEdges && !node.isSelected)
+            .classed(colors.target.fill, noOutEdges && !node.isSelected)
+            .classed(colors.highlight.node.fill, node.isSelected);
           svg
             .selectAll(`.link-source-${node.id}`)
-            .classed(middleColor.stroke.default, true)
-            .classed(noInEdges ? sourceColor.stroke : targetColor.stroke, false);
+            .classed(colors.highlight.edge.stroke, node.isSelected);
           svg
             .selectAll(`.link-source-${node.id}-marker`)
-            .classed(middleColor.fill.marker, true)
-            .classed(noInEdges ? sourceColor.fill : targetColor.fill, false);
-          svg
-            .selectAll(`.link-target-${node.id}`)
-            .classed(middleColor.stroke.default, true)
-            .classed(noOutEdges ? targetColor.stroke : sourceColor.stroke, false);
-          svg
-            .selectAll(`.link-target-${node.id}-marker`)
-            .classed(middleColor.fill.marker, true)
-            .classed(noOutEdges ? targetColor.fill : sourceColor.fill, false);
+            .classed(colors.highlight.edge.fill, node.isSelected);
         });
 
       const nodeId = svg
@@ -255,7 +269,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
                     <path
                       d="M0,0L0,10L10,5"
                       className={cn(
-                        middleColor.fill.default,
+                        colors.default.fill,
                         "transition-[fill] duration-300",
                         `link-source-${link.source}-marker link-target-${link.target}-marker`,
                       )}
@@ -264,7 +278,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
                 </defs>
                 <path
                   className={cn(
-                    middleColor.stroke.default,
+                    colors.default.stroke,
                     "link transition-[stroke] duration-300",
                     `link-source-${link.source} link-target-${link.target}`,
                   )}
@@ -276,7 +290,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
                   rx="4"
                   id={`${linkId}-text-background`}
                   className={cn({
-                    [middleColor.fill.default]: data.renderWeights,
+                    [colors.default.fill]: data.renderWeights,
                     "stroke-zinc-500 stroke-1": data.renderWeights,
                     "fill-none stroke-none": !data.renderWeights,
                   })}

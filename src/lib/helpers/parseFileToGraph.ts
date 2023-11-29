@@ -40,6 +40,7 @@ export async function parseFileToGraph({
   const nodeList = range(0, metadata.adjacency.length);
 
   const nodes: Node[] = nodeList.map((node) => ({
+    isSelected: false,
     id: node,
     outgoing: [],
     incoming: [],
@@ -87,8 +88,6 @@ export async function parseFileToGraph({
     links,
     stCuts: {},
   };
-
-  console.log({ graph });
 
   return graph;
 }

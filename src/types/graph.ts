@@ -1,4 +1,5 @@
 export type Node = {
+  isSelected: boolean;
   id: number;
   set?: 1 | 2 | 3;
   outgoing: number[];
