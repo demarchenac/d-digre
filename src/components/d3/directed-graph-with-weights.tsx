@@ -118,11 +118,11 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
             .classed(colors.highlight.node.fill, node.isSelected);
           svg
             .selectAll(`.link-source-${node.id}`)
-            .classed(colors.default.stroke, !noInEdges && !noInEdges && !node.isSelected)
+            .classed(colors.default.stroke, !node.isSelected)
             .classed(colors.highlight.edge.stroke, node.isSelected);
           svg
             .selectAll(`.link-source-${node.id}-marker`)
-            .classed(colors.default.fill, !noInEdges && !noInEdges && !node.isSelected)
+            .classed(colors.default.fill, !node.isSelected)
             .classed(colors.highlight.edge.fill, node.isSelected);
         });
 
