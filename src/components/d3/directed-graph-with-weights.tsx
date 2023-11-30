@@ -172,7 +172,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
 
           // Length of path from center of source node to center of target node
           const pathLength = Math.sqrt(diffX * diffX + diffY * diffY);
-          const arrowOffset = 5;
+          const arrowOffset = 8;
 
           // x and y distances from center to outside edge of target node
           const nodeRadius = radius + arrowOffset + strokeWidth / 2;
@@ -266,7 +266,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
                     id={`link-arrow-from-${link.source}-to-${link.target}`}
                     markerWidth="5"
                     markerHeight="5"
-                    refX="8"
+                    refX="7"
                     refY="5"
                     orient="auto"
                     markerUnits="strokeWidth"
