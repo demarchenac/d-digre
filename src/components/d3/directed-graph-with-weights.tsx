@@ -231,16 +231,21 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
       );
 
       if (zoomG) {
-        zoomG.style("transform-origin", "50% 50% 0");
+        if (navigator.userAgent.indexOf("Firefox") !== -1)
+          zoomG.style("transform-origin", "50% 50% 0");
 
-        const onZoom = (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-          zoomG.attr(
-            "transform",
-            `translate(${event.transform.x},${event.transform.y}) scale(${event.transform.k})`,
-          );
+        const onZoom = ({ transform }: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+          zoomG.attr("transform", transform.toString());
         };
 
-        const zoomHandler = d3.zoom<SVGSVGElement, unknown>().on("zoom", onZoom);
+        const zoomHandler = d3
+          .zoom<SVGSVGElement, unknown>()
+          .extent([
+            [0, 0],
+            [width, height],
+          ])
+          .scaleExtent([1, 10])
+          .on("zoom", onZoom);
         svg.call(zoomHandler);
       }
     },
