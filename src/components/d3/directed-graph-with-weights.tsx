@@ -231,6 +231,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
       );
 
       if (zoomG) {
+        // fixes zooming on Mozilla Firefox.
         if (navigator.userAgent.indexOf("Firefox") !== -1)
           zoomG.style("transform-origin", "50% 50% 0");
 
