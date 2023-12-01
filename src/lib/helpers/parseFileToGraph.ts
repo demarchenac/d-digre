@@ -1,4 +1,4 @@
-import type { Node, Graph, Link } from "~/types";
+import type { DirectedNode, DirectedGraph, Link } from "~/types";
 import { range } from "./range";
 
 export async function parseFileToGraph({
@@ -7,7 +7,7 @@ export async function parseFileToGraph({
 }: {
   file?: File;
   startsAt1: boolean;
-}): Promise<Graph | undefined> {
+}): Promise<DirectedGraph | undefined> {
   if (!file) {
     console.error("Expected a file to parse");
     alert("Expected a file to parse");
@@ -39,7 +39,7 @@ export async function parseFileToGraph({
 
   const nodeList = range(0, metadata.adjacency.length);
 
-  const nodes: Node[] = nodeList.map((node) => ({
+  const nodes: DirectedNode[] = nodeList.map((node) => ({
     isSelected: false,
     id: node,
     outgoing: [],
@@ -49,7 +49,12 @@ export async function parseFileToGraph({
   const links: Link[] = [];
   nodeList.forEach((source) =>
     nodeList.forEach((target) => {
-      const link = { source, target, weight: metadata.adjacency[source]?.[target] ?? 0 };
+      const link = {
+        source,
+        target,
+        weight: metadata.adjacency[source]?.[target] ?? 0,
+        isSelected: false,
+      };
       if (link.weight > 0) links.push(link);
     }),
   );
@@ -79,13 +84,14 @@ export async function parseFileToGraph({
     else if (isTarget) node.set = 3;
   });
 
-  const graph: Graph = {
+  const graph: DirectedGraph = {
     ...metadata,
     renderWeights: false,
     sources,
     targets,
     nodes,
     links,
+    stPaths: {},
     stCuts: {},
   };
 

@@ -2,12 +2,12 @@
 
 import * as d3 from "d3";
 import { useD3Render } from "~/hooks";
-import { parseGraphToId, parseLinkToId } from "~/lib/helpers";
+import { parseGraphToId, parseLinkToLinkId } from "~/lib/helpers";
 import { cn } from "~/lib/utils";
-import type { Graph, SimulationLink, SimulationNode } from "~/types";
+import type { DirectedGraph, SimulationLink, SimulationNode } from "~/types";
 
 type ForceGraphProps = {
-  data: Graph;
+  data: DirectedGraph;
   height?: number;
   width?: number;
 };
@@ -154,7 +154,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
         const getMiddleX = (link: SimulationLink) => (getX(link.source) + getX(link.target)) / 2;
         const getMiddleY = (link: SimulationLink) => (getY(link.source) + getY(link.target)) / 2;
         const getLinkTextBB = (link: SimulationLink) => {
-          const textId = parseLinkToId(link) + "-text";
+          const textId = parseLinkToLinkId(link) + "-text";
           const text = document.getElementById(textId);
           if (!text) return undefined;
 
@@ -258,7 +258,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
       <g ref={zoomRef}>
         <g id="links">
           {links.map((link) => {
-            const linkId = parseLinkToId(link);
+            const linkId = parseLinkToLinkId(link);
             return (
               <g key={linkId}>
                 <defs>

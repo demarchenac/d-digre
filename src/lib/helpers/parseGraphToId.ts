@@ -1,7 +1,7 @@
-import { type Graph } from "~/types";
-import { parseLinkToId } from "./parseLinkToId";
+import { type DirectedGraph } from "~/types";
+import { parseLinkToLinkId } from "./linkAndIdParsing";
 
-export function parseGraphToId(graph: Graph) {
-  const linkIds = graph.links.map(parseLinkToId);
-  return linkIds.join(",");
+export function parseGraphToId(graph: DirectedGraph) {
+  const linkIds = graph.links.map(parseLinkToLinkId);
+  return linkIds.join("-");
 }

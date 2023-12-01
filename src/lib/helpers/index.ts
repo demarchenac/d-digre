@@ -1,4 +1,5 @@
-export { range } from "./range";
+export { addSTCuts } from "./addSTCuts";
 export { parseFileToGraph } from "./parseFileToGraph";
 export { parseGraphToId } from "./parseGraphToId";
-export { parseLinkToId } from "./parseLinkToId";
+export { parseLinkToLinkId } from "./linkAndIdParsing";
+export { range } from "./range";

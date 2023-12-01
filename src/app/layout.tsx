@@ -32,9 +32,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <header className="absolute left-0 top-0 z-10 flex w-screen justify-end  p-4">
               <ThemeToggle />
             </header>
-            <aside className="absolute left-4 top-4 z-20 flex min-w-[200px] max-w-xs flex-col gap-4 rounded-lg p-4 ring-1 ring-inset ring-white/10">
-              <FloatingControls />
-            </aside>
+
+            <FloatingControls />
+
             <main>{children}</main>
           </ThemeProvider>
         </JotaiProvider>

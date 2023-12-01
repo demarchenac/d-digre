@@ -1,1 +1,1 @@
-export type AppState = "no-graph" | "with-graph";
+export type AppState = "no-graph" | "with-graph" | "with-st-cuts";

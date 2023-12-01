@@ -1,5 +1,5 @@
 import { atom } from "jotai";
-import type { AppState, Graph } from "~/types";
+import type { AppState, DirectedGraph } from "~/types";
 
 export const stateAtom = atom<AppState>("no-graph");
-export const graphAtom = atom<Graph | undefined>(undefined);
+export const graphAtom = atom<DirectedGraph | undefined>(undefined);
