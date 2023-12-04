@@ -143,7 +143,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
         .selectAll<SVGTextElement, SimulationNode>("text")
         .data(links);
 
-      function ticked() {
+      function onTick() {
         // The source property comes from the SimulationLinkDatum interface, and by default,
         // has a type of TypeOfNode | string | number, where TypeOfNode is SimulationNode, so we
         // need to make an `as assertion`. The x,y properties added by the SimulationNodeDatum
@@ -191,6 +191,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
 
         linkWeightBackground.each(function (link) {
           const boundingBox = getLinkTextBB(link);
+
           if (!boundingBox) return;
 
           d3.select(this)
@@ -201,7 +202,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
         });
       }
 
-      simulation.on("tick", ticked);
+      simulation.on("tick", onTick);
 
       function onDragStart(
         event: d3.D3DragEvent<SVGCircleElement, SimulationNode, SimulationNode>,
