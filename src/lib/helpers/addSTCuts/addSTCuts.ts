@@ -37,6 +37,17 @@ export function addSTCuts(graph: DirectedGraph): DirectedGraph {
         }
       }
 
+      cutTable.sort((current, next) => {
+        if (current.sources.length < next.sources.length) return -2;
+        if (current.sources.length > next.sources.length) return 2;
+
+        const currentSum = current.sources.join("");
+        const nextSum = next.sources.join("");
+        if (currentSum < nextSum) return -1;
+        if (currentSum > nextSum) return 1;
+        return 0;
+      });
+
       mutable.stCuts[`from_${source}_to_${target}`] = cutTable;
     }
   }
