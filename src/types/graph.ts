@@ -43,6 +43,7 @@ export type STCut = {
 };
 
 export type STCutMetadata = {
+  id: string;
   capacity: number;
   sources: number[];
   targets: number[];

@@ -9,7 +9,7 @@ export function FloatingControls() {
   const state = useAtomValue(stateAtom, { store: useStore() });
 
   return (
-    <aside className="absolute left-4 top-4 z-20 flex min-w-[320px] max-w-xs flex-col gap-4 rounded-lg bg-background p-4 ring-1 ring-inset ring-white/10">
+    <aside className="absolute left-4 top-4 z-20 flex max-h-[90vh] min-w-[320px] max-w-xs flex-col gap-4 overflow-auto rounded-lg bg-background p-4 ring-1 ring-inset ring-white/10">
       Current state: {state}
       <GraphUploadDialog />
       <GraphControls />

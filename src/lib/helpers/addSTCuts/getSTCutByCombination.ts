@@ -4,6 +4,7 @@ import { type getSTPaths } from "./getSTPaths";
 import { parseDirectedToBiDirected } from "./parseDirectedToBiDirected";
 import { dfs } from "./dfs";
 import { parseLinkIdToLink } from "../linkAndIdParsing";
+import { parseCutToId } from "../parseCutToId";
 
 type GetSTCutByCombinationProps = {
   graph: DirectedGraph;
@@ -77,7 +78,9 @@ export function getSTCutByCombination({
       })
       .reduce((sum, value) => sum + value, 0);
 
-    return { id: combination, metadata: { capacity, sources, targets, cut } };
+    const core = { capacity, sources, targets };
+
+    return { id: combination, metadata: { ...core, cut, id: parseCutToId(core) } };
   }
 
   return undefined;
