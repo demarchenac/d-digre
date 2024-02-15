@@ -18,6 +18,20 @@ export type Link = {
   isSelected: boolean;
 };
 
+export type PushRelabelIteration = {
+  flow: number[][];
+  excess: number[];
+  height: number[];
+  seen: number[];
+  p: number;
+};
+
+export type PushRelabelMetadata = {
+  maxFlow: number;
+  iterations: PushRelabelIteration[];
+  flow: number[][];
+};
+
 export type DirectedGraph = {
   startsAt1: boolean;
   renderWeights: boolean;
@@ -27,8 +41,7 @@ export type DirectedGraph = {
   adjacency: number[][];
   nodes: DirectedNode[];
   links: Link[];
-  stCuts: Record<string, STCutMetadata[]>;
-  stPaths: Record<string, number[][]>;
+  pushRelabel: Record<`${number}_${number}`, PushRelabelMetadata>;
 };
 
 export type BiDirectedGraph = {

@@ -17,7 +17,7 @@ import {
 import { DropzoneController } from "~/components/rhf/dropzone-controller";
 import { SwitchController } from "~/components/rhf/switch-controller";
 import { parseFileToGraph } from "~/lib/helpers";
-import { graphAtom, stateAtom } from "~/lib/jotai";
+import { algorithmAtom, graphAtom, stateAtom } from "~/lib/jotai";
 
 type FormValues = {
   startsAt1: boolean;
@@ -30,6 +30,7 @@ export function GraphUploadDialog() {
   const rhfGraphUpload = useForm<FormValues>();
   const [state, setState] = useAtom(stateAtom, { store: useStore() });
   const setGraph = useSetAtom(graphAtom, { store: useStore() });
+  const setAlgorithm = useSetAtom(algorithmAtom, { store: useStore() });
   const { control } = rhfGraphUpload;
 
   const onSubmit: SubmitHandler<FormValues> = async ({ graphFiles, startsAt1 }) => {
@@ -40,7 +41,8 @@ export function GraphUploadDialog() {
     const graph = await parseFileToGraph({ file, startsAt1 });
 
     setGraph(graph);
-    setState("with-graph");
+    setState("graph-loaded");
+    setAlgorithm("none");
 
     setIsLoading(false);
     rhfGraphUpload.reset();

@@ -5,8 +5,8 @@ import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { graphAtom } from "~/lib/jotai";
 import { WithGraphControls } from "./with-graph-controls";
-import { WithSTCutControls } from "./with-st-cuts-controls";
 import { WithPlaybackControls } from "./with-playback-controls";
+import { WithPushRelabelControls } from "./algorithms/push-relabel";
 
 export function GraphControls() {
   const [graph, setGraph] = useAtom(graphAtom, { store: useStore() });
@@ -37,7 +37,7 @@ export function GraphControls() {
       </div>
 
       <WithGraphControls />
-      <WithSTCutControls />
+      <WithPushRelabelControls />
       <WithPlaybackControls />
     </>
   );

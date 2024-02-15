@@ -1,6 +1,5 @@
 import type { DirectedNode, DirectedGraph, Link } from "~/types";
 import { range } from "./range";
-import { pushRelabel } from "./pushRelabel";
 
 export async function parseFileToGraph({
   file,
@@ -22,7 +21,7 @@ export async function parseFileToGraph({
     .filter((line) => line.trim().length > 0);
 
   const metadata = {
-    startsAt1,
+    startsAt1: startsAt1 ?? false,
     description: lines.at(0) ?? "",
     adjacency: lines.slice(2)?.map((row) => row.split(" ").map(Number)),
   };
@@ -92,17 +91,8 @@ export async function parseFileToGraph({
     targets,
     nodes,
     links,
-    stPaths: {},
-    stCuts: {},
+    pushRelabel: {},
   };
-
-  for (const source of sources) {
-    for (const target of targets) {
-      console.log(`Source: ${source}, Target: ${target}`);
-      console.log(pushRelabel(metadata.adjacency, source, target));
-      console.log("------------------------------------");
-    }
-  }
 
   return graph;
 }

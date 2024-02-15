@@ -1,1 +1,2 @@
-export type AppState = "no-graph" | "with-graph" | "with-st-cuts";
+export type AppState = "no-graph" | "graph-loaded" | "ran-algorithm" | "selected-source-target";
+export type SelectedAlgorithm = "none" | "push-relabel";
