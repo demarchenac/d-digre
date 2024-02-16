@@ -1,4 +1,4 @@
-import { type PairPattern } from "./state";
+import { type TrimmingMethod, type PairPattern } from "./state";
 
 export type DirectedNode = {
   isSelected: boolean;
@@ -22,17 +22,8 @@ export type Link = {
   shouldRender: boolean;
 };
 
-export type PushRelabelIteration = {
-  flow: number[][];
-  excess: number[];
-  height: number[];
-  seen: number[];
-  p: number;
-};
-
 export type PushRelabelMetadata = {
   maxFlow: number;
-  iterations: PushRelabelIteration[];
   flow: number[][];
   paths: number[][];
   capacities: number[][];
@@ -52,6 +43,8 @@ export type DirectedGraph = {
   pushRelabel: {
     raw: Record<PairPattern, PushRelabelMetadata>;
     trimmed: Record<PairPattern, PushRelabelMetadata>;
+    rawMerged?: PushRelabelMetadata;
+    trimmedMerged: Record<TrimmingMethod, PushRelabelMetadata> | Record<string, never>;
   };
 };
 

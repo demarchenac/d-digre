@@ -1,4 +1,3 @@
-import { type PushRelabelIteration } from "~/types";
 import { zeros } from "./zeros";
 
 function push(
@@ -65,7 +64,7 @@ export function pushRelabel(
   capacities: number[][],
   source: number,
   sink: number,
-): { maxFlow: number; flow: number[][]; iterations: PushRelabelIteration[] } {
+): { maxFlow: number; flow: number[][] } {
   const flow: number[][] = zeros(capacities.length).map(() => zeros(capacities.length));
   const excess: number[] = zeros(capacities.length);
   const height: number[] = zeros(capacities.length);
@@ -89,9 +88,6 @@ export function pushRelabel(
 
   let p = 0;
 
-  const iterations: PushRelabelIteration[] = [];
-  iterations.push(adaptArgsToIteration(capacities, flow, excess, height, seen, p));
-
   while (p < capacities.length - 2) {
     const u: number = list[p]!;
     const old_height: number = height[u]!;
@@ -103,8 +99,6 @@ export function pushRelabel(
     } else {
       p += 1;
     }
-
-    iterations.push(adaptArgsToIteration(capacities, flow, excess, height, seen, p));
   }
 
   let maxFlow = 0;
@@ -113,36 +107,5 @@ export function pushRelabel(
     maxFlow += flow[source]![i]!;
   }
 
-  // const printable = iterations.map(parseIteration);
-  // console.table(printable);
-
-  return { maxFlow, flow, iterations };
-}
-
-function adaptArgsToIteration(
-  capacities: number[][],
-  flow: number[][],
-  excess: number[],
-  height: number[],
-  seen: number[],
-  p: number,
-) {
-  return {
-    capacities: capacities.map((row) => row.map((v) => v)),
-    flow: flow.map((row) => row.map((v) => v)),
-    excess: [...excess],
-    height: [...height],
-    seen: [...seen],
-    p,
-  };
-}
-
-function parseIteration(iteration: PushRelabelIteration) {
-  return {
-    excess: iteration.excess.join(", "),
-    flow: iteration.flow.map((row) => row.join(", ")).join("\n"),
-    height: iteration.height.join(", "),
-    seen: iteration.seen.join(", "),
-    p: iteration.p.toString(),
-  };
+  return { maxFlow, flow };
 }

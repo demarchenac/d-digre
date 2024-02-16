@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAtom, useStore } from "jotai";
 import { Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { type TuplePairPattern, type AppState } from "~/types";
-import { findSourceTargetPaths, pushRelabel } from "~/lib/helpers";
+import type { TuplePairPattern, AppState, TrimmingMethod } from "~/types";
+import { findSourceTargetPaths, pushRelabel, shuffle, zeros } from "~/lib/helpers";
 import { algorithmAtom, graphAtom, stateAtom } from "~/lib/jotai";
 
 const nonPermissibleStatus: AppState[] = ["no-graph"];
@@ -28,6 +28,9 @@ export function WithAlgorithmControls() {
     const withPushRelabel = { ...graph };
 
     let minimalMaximumFlow = Number.POSITIVE_INFINITY;
+    let maximalMaximumFlow = 0;
+
+    const shouldMergeWithTrimmed: Record<TuplePairPattern, boolean> = {};
 
     for (const source of graph.sources) {
       for (const target of graph.targets) {
@@ -68,18 +71,151 @@ export function WithAlgorithmControls() {
         if (pushRelabelMetadata.maxFlow < minimalMaximumFlow) {
           minimalMaximumFlow = pushRelabelMetadata.maxFlow;
         }
+
+        if (pushRelabelMetadata.maxFlow > maximalMaximumFlow) {
+          maximalMaximumFlow = pushRelabelMetadata.maxFlow;
+        }
       }
     }
 
     for (const raw of Object.entries(withPushRelabel.pushRelabel.raw)) {
       const [signedPair, metadata] = raw;
       const pair = signedPair.replace("raw:", "") as TuplePairPattern;
+      shouldMergeWithTrimmed[pair] = false;
 
       if (minimalMaximumFlow < metadata.maxFlow) {
-        withPushRelabel.pushRelabel.trimmed[`trimmed_first:${pair}`] = { ...metadata };
-        withPushRelabel.pushRelabel.trimmed[`trimmed_longest:${pair}`] = { ...metadata };
-        withPushRelabel.pushRelabel.trimmed[`trimmed_random:${pair}`] = { ...metadata };
+        shouldMergeWithTrimmed[pair] = true;
+        const pathsToRemove = metadata.maxFlow - minimalMaximumFlow;
+
+        const removingFirst = Array.from(metadata.paths);
+        const removingRandom = shuffle(metadata.paths);
+        const removingLongest = Array.from(metadata.paths);
+        removingLongest.sort((a, b) => a.length + b.length);
+
+        for (let removed = 0; removed < pathsToRemove; removed++) {
+          removingFirst.shift();
+          removingRandom.shift();
+          removingLongest.shift();
+        }
+
+        withPushRelabel.pushRelabel.trimmed[`trimmed_first:${pair}`] = {
+          ...metadata,
+          maxFlow: minimalMaximumFlow,
+          paths: removingFirst,
+        };
+
+        withPushRelabel.pushRelabel.trimmed[`trimmed_longest:${pair}`] = {
+          ...metadata,
+          maxFlow: minimalMaximumFlow,
+          paths: removingLongest,
+        };
+
+        withPushRelabel.pushRelabel.trimmed[`trimmed_random:${pair}`] = {
+          ...metadata,
+          maxFlow: minimalMaximumFlow,
+          paths: removingRandom,
+        };
       }
+    }
+
+    const rawMergedCapacity = zeros(graph.adjacency.length).map(() =>
+      zeros(graph.adjacency.length),
+    );
+    const rawMergedFlow = zeros(graph.adjacency.length).map(() => zeros(graph.adjacency.length));
+
+    const rawMergedPaths: string[] = [];
+
+    for (const kindMap of Object.entries(shouldMergeWithTrimmed)) {
+      const [pair] = kindMap as [TuplePairPattern, boolean];
+      const meta = withPushRelabel.pushRelabel.raw[`raw:${pair}`]!;
+      meta.capacities.forEach((row, rowIndex) => {
+        row.forEach((node, nodeIndex) => {
+          rawMergedCapacity[rowIndex]![nodeIndex] = Math.max(
+            rawMergedCapacity[rowIndex]![nodeIndex]!,
+            node,
+          );
+        });
+      });
+      meta.flow.forEach((row, rowIndex) => {
+        row.forEach((node, nodeIndex) => {
+          rawMergedFlow[rowIndex]![nodeIndex] = Math.max(
+            rawMergedFlow[rowIndex]![nodeIndex]!,
+            node,
+          );
+        });
+      });
+
+      meta.paths.forEach((path) => rawMergedPaths.push(path.join("-")));
+    }
+
+    const rawMergedAdjacency = rawMergedCapacity.map((row) =>
+      row.map((node) => (node > 0 ? 1 : 0)),
+    );
+
+    const nonRepeatedPathsForRawMerged = Array.from(new Set(rawMergedPaths)).map((path) =>
+      path.split("-").map(Number),
+    );
+
+    withPushRelabel.pushRelabel.rawMerged = {
+      capacities: rawMergedCapacity,
+      adjacency: rawMergedAdjacency,
+      flow: rawMergedFlow,
+      maxFlow: maximalMaximumFlow,
+      paths: nonRepeatedPathsForRawMerged,
+    };
+
+    for (const method of ["first", "longest", "random"] as TrimmingMethod[]) {
+      const trimmedMergedCapacity = zeros(graph.adjacency.length).map(() =>
+        zeros(graph.adjacency.length),
+      );
+      const trimmedMergedFlow = zeros(graph.adjacency.length).map(() =>
+        zeros(graph.adjacency.length),
+      );
+
+      const trimmedMergedPaths: string[] = [];
+
+      for (const kindMap of Object.entries(shouldMergeWithTrimmed)) {
+        const [pair, shouldUseTrimmed] = kindMap as [TuplePairPattern, boolean];
+
+        const meta = shouldUseTrimmed
+          ? withPushRelabel.pushRelabel.trimmed[`trimmed_${method}:${pair}`]!
+          : withPushRelabel.pushRelabel.raw[`raw:${pair}`]!;
+
+        meta.capacities.forEach((row, rowIndex) => {
+          row.forEach((node, nodeIndex) => {
+            trimmedMergedCapacity[rowIndex]![nodeIndex] = Math.max(
+              trimmedMergedCapacity[rowIndex]![nodeIndex]!,
+              node,
+            );
+          });
+        });
+        meta.flow.forEach((row, rowIndex) => {
+          row.forEach((node, nodeIndex) => {
+            trimmedMergedFlow[rowIndex]![nodeIndex] = Math.max(
+              trimmedMergedFlow[rowIndex]![nodeIndex]!,
+              node,
+            );
+          });
+        });
+
+        meta.paths.forEach((path) => trimmedMergedPaths.push(path.join("-")));
+      }
+
+      const trimmedMergedAdjacency = trimmedMergedCapacity.map((row) =>
+        row.map((node) => (node > 0 ? 1 : 0)),
+      );
+
+      const nonRepeatedPathsForTrimmedMerged = Array.from(new Set(trimmedMergedPaths)).map((path) =>
+        path.split("-").map(Number),
+      );
+
+      withPushRelabel.pushRelabel.trimmedMerged[method] = {
+        capacities: trimmedMergedCapacity,
+        adjacency: trimmedMergedAdjacency,
+        flow: trimmedMergedFlow,
+        maxFlow: minimalMaximumFlow,
+        paths: nonRepeatedPathsForTrimmedMerged,
+      };
     }
 
     setGraph(withPushRelabel);

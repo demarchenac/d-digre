@@ -3,7 +3,9 @@ export type AppState =
   | "graph-loaded"
   | "ran-algorithm"
   | "selected-raw-source-target"
-  | "selected-trimmed-source-target";
+  | "selected-trimmed-source-target"
+  | "selected-raw-merged"
+  | "selected-trimmed-merged";
 
 export type SelectedAlgorithm = "none" | "push-relabel";
 

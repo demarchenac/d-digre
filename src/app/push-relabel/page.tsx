@@ -2,13 +2,21 @@
 
 import { useAtomValue, useStore } from "jotai";
 import { DirectedGraphWithWeights } from "~/components/d3/directed-graph-with-weights";
-import { algorithmAtom, graphAtom, sourceTargetPairAtom, stateAtom } from "~/lib/jotai";
+import {
+  algorithmAtom,
+  graphAtom,
+  sourceTargetPairAtom,
+  stateAtom,
+  trimmingMethodAtom,
+} from "~/lib/jotai";
+import { type AppState } from "~/types";
 
 export default function HomePage() {
   const graph = useAtomValue(graphAtom, { store: useStore() });
   const state = useAtomValue(stateAtom, { store: useStore() });
   const algorithm = useAtomValue(algorithmAtom, { store: useStore() });
   const pair = useAtomValue(sourceTargetPairAtom, { store: useStore() });
+  const method = useAtomValue(trimmingMethodAtom, { store: useStore() });
 
   const centerClasses =
     "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform text-center";
@@ -24,12 +32,20 @@ export default function HomePage() {
   let visibleNodes: number[] = [];
   const visibleLinks: { source: number; target: number }[] = [];
 
-  if (pair) {
+  if (
+    typeof pair !== "undefined" ||
+    (["selected-raw-merged", "selected-trimmed-merged"] as AppState[]).includes(state)
+  ) {
     let paths: number[][] = [];
-    if (pair.startsWith("raw:")) {
+
+    if (pair && pair.startsWith("raw:")) {
       paths = graph.pushRelabel.raw[pair]!.paths;
-    } else {
+    } else if (pair && pair.startsWith("trimmed_")) {
       paths = graph.pushRelabel.trimmed[pair]!.paths;
+    } else if (state === "selected-raw-merged" && graph.pushRelabel.rawMerged) {
+      paths = graph.pushRelabel.rawMerged.paths;
+    } else if (state === "selected-trimmed-merged" && method) {
+      paths = graph.pushRelabel.trimmedMerged[method].paths;
     }
 
     const allPaths = paths.reduce((accumulator, current) => accumulator.concat(current), []);
