@@ -4,8 +4,7 @@ import { useAtom, useStore } from "jotai";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
 import { graphAtom } from "~/lib/jotai";
-import { WithGraphControls } from "./with-graph-controls";
-import { WithPlaybackControls } from "./with-playback-controls";
+import { WithAlgorithmControls } from "./with-algorithm-controls";
 import { WithPushRelabelControls } from "./algorithms/push-relabel";
 
 export function GraphControls() {
@@ -36,9 +35,8 @@ export function GraphControls() {
         <Label htmlFor="render-weights">Render weights</Label>
       </div>
 
-      <WithGraphControls />
+      <WithAlgorithmControls />
       <WithPushRelabelControls />
-      <WithPlaybackControls />
     </>
   );
 }

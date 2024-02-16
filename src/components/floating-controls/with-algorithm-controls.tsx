@@ -12,7 +12,7 @@ import { findSourceTargetPaths } from "~/lib/helpers/findSourceTargetPaths";
 
 const nonPermissibleStatus: AppState[] = ["no-graph"];
 
-export function WithGraphControls() {
+export function WithAlgorithmControls() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [state, setState] = useAtom(stateAtom, { store: useStore() });
@@ -82,8 +82,6 @@ export function WithGraphControls() {
         withPushRelabel.pushRelabel.trimmed[`trimmed_random:${pair}`] = { ...metadata };
       }
     }
-
-    console.log({ pushRelabel: withPushRelabel.pushRelabel });
 
     setGraph(withPushRelabel);
     setState("ran-algorithm");
