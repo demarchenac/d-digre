@@ -25,7 +25,13 @@ export default function HomePage() {
   const visibleLinks: { source: number; target: number }[] = [];
 
   if (pair) {
-    const paths = graph.pushRelabel.raw[pair]!.paths;
+    let paths: number[][] = [];
+    if (pair.startsWith("raw:")) {
+      paths = graph.pushRelabel.raw[pair]!.paths;
+    } else {
+      paths = graph.pushRelabel.trimmed[pair]!.paths;
+    }
+
     const allPaths = paths.reduce((accumulator, current) => accumulator.concat(current), []);
 
     visibleNodes = Array.from(new Set(allPaths));

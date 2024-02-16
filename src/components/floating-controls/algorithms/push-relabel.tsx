@@ -1,6 +1,7 @@
 "use client";
 
 import { useAtom, useAtomValue, useStore } from "jotai";
+import { ArrowDown01, MoveHorizontal, Shuffle } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -10,7 +11,12 @@ import {
 import { Button } from "~/components/ui/button";
 import { algorithmAtom, graphAtom, sourceTargetPairAtom, stateAtom } from "~/lib/jotai";
 import { cn } from "~/lib/utils";
-import { type AppState } from "~/types";
+import {
+  type RawPairPattern,
+  type AppState,
+  type TrimmedPairPattern,
+  type TrimmingMethod,
+} from "~/types";
 
 const nonPermissibleStatus: AppState[] = ["no-graph", "graph-loaded"];
 
@@ -32,8 +38,8 @@ export function WithPushRelabelControls() {
   };
 
   const rawActions = Object.keys(graph.pushRelabel.raw).map((key) => {
-    const literalKey = key as `${number}_${number}`;
-    const [source, target] = key.split("_").map(Number);
+    const literalKey = key as RawPairPattern;
+    const [source, target] = literalKey.split(":").at(-1)!.split("_").map(Number);
     const maxFlow = graph.pushRelabel.raw[literalKey]!.maxFlow;
 
     if (source === undefined || target === undefined) return null;
@@ -41,22 +47,60 @@ export function WithPushRelabelControls() {
     const sourceLabel = (source + labelIncrement).toString();
     const targetLabel = (target + labelIncrement).toString();
 
-    const onSourceTargetClick = () => {
-      const literalKey = key as `${number}_${number}`;
+    const onPairClick = () => {
       if (pair === literalKey) return;
 
       setPair(literalKey);
-      setState("selected-source-target");
+      setState("selected-raw-source-target");
     };
 
     return (
       <div className="m-2" key={key}>
         <Button
           variant="ghost"
-          onClick={onSourceTargetClick}
+          onClick={onPairClick}
           className={cn("w-full", { "ring-2 ring-green-600": key === pair })}
         >
           Source: {sourceLabel}, Target: {targetLabel} = {maxFlow}
+        </Button>
+      </div>
+    );
+  }) as JSX.Element[];
+
+  const minifyActions = Object.keys(graph.pushRelabel.trimmed).map((key) => {
+    const literalKey = key as TrimmedPairPattern;
+    const [source, target] = literalKey.split(":").at(-1)!.split("_").map(Number);
+    const maxFlow = graph.pushRelabel.trimmed[literalKey]!.maxFlow;
+
+    if (source === undefined || target === undefined) return null;
+
+    const sourceLabel = (source + labelIncrement).toString();
+    const targetLabel = (target + labelIncrement).toString();
+
+    const getIcon = () => {
+      if (literalKey.includes("first" as TrimmingMethod)) return <ArrowDown01 size={18} />;
+      if (literalKey.includes("longest" as TrimmingMethod)) return <MoveHorizontal size={18} />;
+      if (literalKey.includes("random" as TrimmingMethod)) return <Shuffle size={18} />;
+    };
+
+    const onPairClick = () => {
+      if (pair === literalKey) return;
+
+      setPair(literalKey);
+      setState("selected-trimmed-source-target");
+    };
+
+    return (
+      <div className="m-2" key={key}>
+        <Button
+          variant="ghost"
+          onClick={onPairClick}
+          className={cn("flex w-full gap-2", { "ring-2 ring-green-600": key === pair })}
+        >
+          {getIcon()}{" "}
+          <span>
+            Source: {sourceLabel}, Target: {targetLabel} = {maxFlow}
+          </span>
         </Button>
       </div>
     );
@@ -73,6 +117,14 @@ export function WithPushRelabelControls() {
           <AccordionContent>{rawActions}</AccordionContent>
         </AccordionItem>
       </Accordion>
+      {minifyActions.length > 0 && (
+        <Accordion type="single" collapsible key="trimmed-actions">
+          <AccordionItem value="paths">
+            <AccordionTrigger className="pt-0">Trimmed Subgraphs</AccordionTrigger>
+            <AccordionContent>{minifyActions}</AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
     </>
   );
 }

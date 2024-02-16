@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useAtom, useSetAtom, useStore } from "jotai";
+import { useAtom, useStore } from "jotai";
 import { Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { algorithmAtom, graphAtom, stateAtom } from "~/lib/jotai";
 import { pushRelabel } from "~/lib/helpers/pushRelabel";
 import { useRouter } from "next/navigation";
-import { type AppState } from "~/types";
+import { type TuplePairPattern, type AppState } from "~/types";
 import { findSourceTargetPaths } from "~/lib/helpers/findSourceTargetPaths";
-import { zeros } from "~/lib/helpers/zeros";
 
 const nonPermissibleStatus: AppState[] = ["no-graph"];
 
@@ -28,6 +27,8 @@ export function WithGraphControls() {
     setIsLoading(true);
 
     const withPushRelabel = { ...graph };
+
+    let minimalMaximumFlow = Number.POSITIVE_INFINITY;
 
     for (const source of graph.sources) {
       for (const target of graph.targets) {
@@ -56,14 +57,34 @@ export function WithGraphControls() {
           row.map((nodeFlow) => (nodeFlow > 0 ? 1 : 0)),
         );
 
-        withPushRelabel.pushRelabel.raw[`${source}_${target}`] = {
+        const metadata = {
           ...pushRelabelMetadata,
           paths: pathsWithoutRepeatingNode,
           capacities,
           adjacency,
         };
+
+        withPushRelabel.pushRelabel.raw[`raw:${source}_${target}`] = metadata;
+
+        if (pushRelabelMetadata.maxFlow < minimalMaximumFlow) {
+          minimalMaximumFlow = pushRelabelMetadata.maxFlow;
+        }
       }
     }
+
+    for (const raw of Object.entries(withPushRelabel.pushRelabel.raw)) {
+      const [signedPair, metadata] = raw;
+      const pair = signedPair.replace("raw:", "") as TuplePairPattern;
+
+      if (minimalMaximumFlow < metadata.maxFlow) {
+        withPushRelabel.pushRelabel.trimmed[`trimmed_first:${pair}`] = { ...metadata };
+        withPushRelabel.pushRelabel.trimmed[`trimmed_longest:${pair}`] = { ...metadata };
+        withPushRelabel.pushRelabel.trimmed[`trimmed_random:${pair}`] = { ...metadata };
+      }
+    }
+
+    console.log({ pushRelabel: withPushRelabel.pushRelabel });
+
     setGraph(withPushRelabel);
     setState("ran-algorithm");
     setAlgorithm("push-relabel");

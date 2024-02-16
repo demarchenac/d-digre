@@ -1,3 +1,5 @@
+import { type PairPattern } from "./state";
+
 export type DirectedNode = {
   isSelected: boolean;
   shouldRender: boolean;
@@ -48,8 +50,8 @@ export type DirectedGraph = {
   nodes: DirectedNode[];
   links: Link[];
   pushRelabel: {
-    raw: Record<`${number}_${number}`, PushRelabelMetadata>;
-    trimmed: Record<`${number}_${number}`, PushRelabelMetadata>;
+    raw: Record<PairPattern, PushRelabelMetadata>;
+    trimmed: Record<PairPattern, PushRelabelMetadata>;
   };
 };
 
