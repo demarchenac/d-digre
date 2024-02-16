@@ -14,7 +14,12 @@ export async function parseFileToGraph({
     return;
   }
 
-  const contents = await file.text();
+  let contents = await file.text();
+
+  if (contents.startsWith("\r\n")) {
+    contents = contents.replace("\r\n", "Untitled Graph\r\n");
+  }
+
   const lines = contents
     .split(/\n/g)
     .map((line) => line.replace(/\r/, "").trim().replace(/\s+/g, " "))
@@ -33,6 +38,8 @@ export async function parseFileToGraph({
   const isSquared =
     metadata.capacities.length === numberOfVertexes &&
     metadata.capacities.every((weights) => weights.length === numberOfVertexes);
+
+  console.log({ metadata, lines, contents });
 
   if (!isSquared) {
     console.error("Graph isn't squared");
