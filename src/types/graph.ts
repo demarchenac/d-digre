@@ -59,17 +59,3 @@ export type BiDirectedGraph = {
   nodes: BiDirectedNode[];
   links: Link[];
 };
-
-export type STCut = {
-  capacity: number;
-  sources: number[];
-  targets: number[];
-};
-
-export type STCutMetadata = {
-  id: string;
-  capacity: number;
-  sources: number[];
-  targets: number[];
-  cut: Link[];
-};
