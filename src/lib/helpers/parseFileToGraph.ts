@@ -44,6 +44,7 @@ export async function parseFileToGraph({
 
   const nodes: DirectedNode[] = nodeList.map((node) => ({
     isSelected: false,
+    shouldRender: true,
     id: node,
     outgoing: [],
     incoming: [],
@@ -57,6 +58,7 @@ export async function parseFileToGraph({
         target,
         weight: metadata.capacities[source]?.[target] ?? 0,
         isSelected: false,
+        shouldRender: true,
       };
       if (link.weight > 0) links.push(link);
     }),
