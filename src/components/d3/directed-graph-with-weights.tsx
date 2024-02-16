@@ -116,6 +116,14 @@ export function DirectedGraphWithWeights({
           svg.selectAll(`.link-source-${node.id}-marker`).classed(sourceMarkerClass, true);
           svg.selectAll(`.link-target-${node.id}`).classed(targetEdgeClass, true);
           svg.selectAll(`.link-target-${node.id}-marker`).classed(targetMarkerClass, true);
+          svg
+            .selectAll(".hide-render-link")
+            .classed(sourceEdgeClass, false)
+            .classed(targetEdgeClass, false);
+          svg
+            .selectAll(".hide-render-link-marker")
+            .classed(sourceMarkerClass, false)
+            .classed(targetMarkerClass, false);
         })
         .on("mouseout", function onMouseOut(_event, node) {
           const noInEdges = node.incoming.length === 0;
@@ -156,6 +164,8 @@ export function DirectedGraphWithWeights({
             .selectAll(`.link-source-${node.id}-marker`)
             .classed(colors.default.fill, !node.isSelected)
             .classed(colors.highlight.edge.fill, node.isSelected);
+          svg.selectAll(".hide-render-link").classed(colors.highlight.edge.stroke, false);
+          svg.selectAll(".hide-render-link-marker").classed(colors.highlight.edge.fill, false);
         });
 
       const nodeId = svg
@@ -323,6 +333,9 @@ export function DirectedGraphWithWeights({
                         colors.default.fill,
                         "transition-[fill] duration-300",
                         `link-source-${link.source}-marker link-target-${link.target}-marker`,
+                        {
+                          "hide-render-link-marker": !link.shouldRender,
+                        },
                       )}
                     />
                   </marker>
@@ -332,6 +345,9 @@ export function DirectedGraphWithWeights({
                     colors.default.stroke,
                     "link transition-[stroke] duration-300",
                     `link-source-${link.source} link-target-${link.target}`,
+                    {
+                      "hide-render-link": !link.shouldRender,
+                    },
                   )}
                   strokeWidth={3}
                   markerEnd={`url(#link-arrow-from-${link.source}-to-${link.target})`}
