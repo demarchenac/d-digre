@@ -360,6 +360,7 @@ export function DirectedGraphWithWeights({
                     [colors.default.fill]: data.renderWeights,
                     "stroke-zinc-500 stroke-1": data.renderWeights,
                     "fill-none stroke-none": !data.renderWeights,
+                    hidden: !link.shouldRender,
                   })}
                 />
                 <text
@@ -368,6 +369,7 @@ export function DirectedGraphWithWeights({
                   className={cn("text-[10px]", {
                     "fill-zinc-200 dark:fill-zinc-500": data.renderWeights,
                     "fill-none": !data.renderWeights,
+                    hidden: !link.shouldRender,
                   })}
                   pointerEvents="none"
                 >
