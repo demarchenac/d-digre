@@ -1,15 +1,18 @@
 "use client";
 
 import * as d3 from "d3";
+import { useMemo } from "react";
 import { useD3Render } from "~/hooks";
 import { parseGraphToId, parseLinkToLinkId } from "~/lib/helpers";
 import { cn } from "~/lib/utils";
 import type { DirectedGraph, SimulationLink, SimulationNode } from "~/types";
 
-type ForceGraphProps = {
+type DirectedGraphWithWeightsProps = {
   data: DirectedGraph;
   height?: number;
   width?: number;
+  visibleNodes?: number[];
+  visibleLinks?: { source: number; target: number }[];
 };
 
 /**
@@ -26,7 +29,12 @@ type ForceGraphProps = {
  * - https://observablehq.com/@ben-tanen/a-tutorial-to-using-d3-force-from-someone-who-just-learned-ho
  * - https://observablehq.com/@bumbeishvili/d3-v6-force-graph-with-natural-drag-attraction
  */
-export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
+export function DirectedGraphWithWeights({
+  data,
+  visibleNodes,
+  visibleLinks,
+  ...config
+}: DirectedGraphWithWeightsProps) {
   const strokeWidth = 2;
   const radius = 15;
   const height = config.height ?? window.innerHeight;
@@ -48,8 +56,31 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
     [colors.source.fill, colors.default.fill, colors.target.fill],
   );
 
-  const nodes = data.nodes.map((node) => ({ ...node })) as SimulationNode[];
-  const links = data.links.map((d) => ({ ...d })) as SimulationLink[];
+  const nodes = useMemo(() => {
+    let toRender = data.nodes.map((node) => ({ ...node, shouldRender: true })) as SimulationNode[];
+    if (visibleNodes?.length) {
+      toRender = toRender.map((node) => ({
+        ...node,
+        shouldRender: visibleNodes.includes(node.id),
+      }));
+    }
+
+    return toRender;
+  }, [data.nodes, visibleNodes]);
+
+  const links = useMemo(() => {
+    let toRender = data.links.map((link) => ({ ...link, shouldRender: true })) as SimulationLink[];
+    if (visibleLinks?.length) {
+      toRender = toRender.map((link) => ({
+        ...link,
+        shouldRender: visibleLinks.some(
+          (visibleLink) => visibleLink.source === link.source && visibleLink.target === link.target,
+        ),
+      }));
+    }
+
+    return toRender;
+  }, [data.links, visibleLinks]);
 
   const { svgRef, zoomRef } = useD3Render({
     render(svg, zoomG) {
@@ -221,6 +252,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
         if (!event.active) simulation.alphaTarget(0);
         event.subject.fx = event.subject.x;
         event.subject.fy = event.subject.y;
+        simulation.stop();
       }
 
       node.call(
@@ -254,6 +286,8 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
     dependencies: [graphId],
   });
 
+  const labelIncrement = Number(data.startsAt1);
+
   return (
     <svg ref={svgRef} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
       <text x="16" y="95%" className="fill-slate-500 stroke-1 text-xs" pointerEvents="none">
@@ -267,7 +301,7 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
           {links.map((link) => {
             const linkId = parseLinkToLinkId(link);
             return (
-              <g key={linkId}>
+              <g key={linkId} className={cn({ hidden: !link.shouldRender })}>
                 <defs>
                   <marker
                     id={`link-arrow-from-${link.source}-to-${link.target}`}
@@ -325,14 +359,14 @@ export function DirectedGraphWithWeights({ data, ...config }: ForceGraphProps) {
         </g>
         <g id="nodes" stroke="#fff" strokeWidth={strokeWidth}>
           {nodes.map((node) => (
-            <g key={node.id}>
+            <g key={node.id} className={cn({ hidden: !node.shouldRender })}>
               <circle
                 key={node.id}
                 r={radius}
                 className={cn("cursor-pointer", color(node.set ?? 2))}
               />
               <text textAnchor="middle" className="fill-slate-50 stroke-none" pointerEvents="none">
-                {data.startsAt1 ? node.id + 1 : node.id}
+                {node.id + labelIncrement}
               </text>
             </g>
           ))}

@@ -8,6 +8,8 @@ import { algorithmAtom, graphAtom, stateAtom } from "~/lib/jotai";
 import { pushRelabel } from "~/lib/helpers/pushRelabel";
 import { useRouter } from "next/navigation";
 import { type AppState } from "~/types";
+import { findSourceTargetPaths } from "~/lib/helpers/findSourceTargetPaths";
+import { zeros } from "~/lib/helpers/zeros";
 
 const nonPermissibleStatus: AppState[] = ["no-graph"];
 
@@ -29,8 +31,37 @@ export function WithGraphControls() {
 
     for (const source of graph.sources) {
       for (const target of graph.targets) {
-        const pushRelabelMetadata = pushRelabel(graph.adjacency, source, target);
-        withPushRelabel.pushRelabel[`${source}_${target}`] = pushRelabelMetadata;
+        const pushRelabelMetadata = pushRelabel(graph.capacities, source, target);
+
+        const paths = findSourceTargetPaths(graph.adjacency, source, target);
+
+        let usedNodes: number[] = [];
+        const pathsWithoutRepeatingNode = [];
+        for (const path of paths) {
+          const hasRepeatedNode = path
+            .filter((node) => node !== source && node !== target)
+            .some((node) => usedNodes.includes(node));
+
+          if (hasRepeatedNode) continue;
+
+          usedNodes = usedNodes.concat(path);
+          pathsWithoutRepeatingNode.push(path);
+        }
+
+        const capacities = pushRelabelMetadata.flow.map((row) =>
+          row.map((nodeFlow) => (nodeFlow > 0 ? nodeFlow : 0)),
+        );
+
+        const adjacency = pushRelabelMetadata.flow.map((row) =>
+          row.map((nodeFlow) => (nodeFlow > 0 ? 1 : 0)),
+        );
+
+        withPushRelabel.pushRelabel[`${source}_${target}`] = {
+          ...pushRelabelMetadata,
+          paths: pathsWithoutRepeatingNode,
+          capacities,
+          adjacency,
+        };
       }
     }
     setGraph(withPushRelabel);

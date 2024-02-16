@@ -92,9 +92,7 @@ export function pushRelabel(
   const iterations: PushRelabelIteration[] = [];
   iterations.push(adaptArgsToIteration(capacities, flow, excess, height, seen, p));
 
-  let it = 0;
   while (p < capacities.length - 2) {
-    console.log(`p: ${p}, it: ${it}`);
     const u: number = list[p]!;
     const old_height: number = height[u]!;
     discharge(capacities, flow, excess, height, seen, u);
@@ -107,7 +105,6 @@ export function pushRelabel(
     }
 
     iterations.push(adaptArgsToIteration(capacities, flow, excess, height, seen, p));
-    it++;
   }
 
   let maxFlow = 0;

@@ -20,16 +20,19 @@ export async function parseFileToGraph({
     .map((line) => line.replace(/\r/, "").trim().replace(/\s+/g, " "))
     .filter((line) => line.trim().length > 0);
 
+  const capacities = lines.slice(2)?.map((row) => row.split(" ").map(Number));
+
   const metadata = {
     startsAt1: startsAt1 ?? false,
     description: lines.at(0) ?? "",
-    adjacency: lines.slice(2)?.map((row) => row.split(" ").map(Number)),
+    capacities,
+    adjacency: capacities.map((row) => row.map((node) => (node > 0 ? 1 : 0))),
   };
 
-  const numberOfVertexes = metadata.adjacency[0]?.length ?? 0;
+  const numberOfVertexes = metadata.capacities[0]?.length ?? 0;
   const isSquared =
-    metadata.adjacency.length === numberOfVertexes &&
-    metadata.adjacency.every((weights) => weights.length === numberOfVertexes);
+    metadata.capacities.length === numberOfVertexes &&
+    metadata.capacities.every((weights) => weights.length === numberOfVertexes);
 
   if (!isSquared) {
     console.error("Graph isn't squared");
@@ -37,7 +40,7 @@ export async function parseFileToGraph({
     return;
   }
 
-  const nodeList = range(0, metadata.adjacency.length);
+  const nodeList = range(0, metadata.capacities.length);
 
   const nodes: DirectedNode[] = nodeList.map((node) => ({
     isSelected: false,
@@ -52,7 +55,7 @@ export async function parseFileToGraph({
       const link = {
         source,
         target,
-        weight: metadata.adjacency[source]?.[target] ?? 0,
+        weight: metadata.capacities[source]?.[target] ?? 0,
         isSelected: false,
       };
       if (link.weight > 0) links.push(link);

@@ -1,5 +1,6 @@
 export type DirectedNode = {
   isSelected: boolean;
+  shouldRender: boolean;
   id: number;
   set?: 1 | 2 | 3;
   outgoing: number[];
@@ -16,6 +17,7 @@ export type Link = {
   target: number;
   weight: number;
   isSelected: boolean;
+  shouldRender: boolean;
 };
 
 export type PushRelabelIteration = {
@@ -30,6 +32,9 @@ export type PushRelabelMetadata = {
   maxFlow: number;
   iterations: PushRelabelIteration[];
   flow: number[][];
+  paths: number[][];
+  capacities: number[][];
+  adjacency: number[][];
 };
 
 export type DirectedGraph = {
@@ -38,6 +43,7 @@ export type DirectedGraph = {
   description: string;
   sources: number[];
   targets: number[];
+  capacities: number[][];
   adjacency: number[][];
   nodes: DirectedNode[];
   links: Link[];
