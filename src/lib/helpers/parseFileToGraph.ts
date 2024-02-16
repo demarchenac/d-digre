@@ -39,8 +39,6 @@ export async function parseFileToGraph({
     metadata.capacities.length === numberOfVertexes &&
     metadata.capacities.every((weights) => weights.length === numberOfVertexes);
 
-  console.log({ metadata, lines, contents });
-
   if (!isSquared) {
     console.error("Graph isn't squared");
     alert("Graph isn't squared");
