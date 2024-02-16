@@ -15,7 +15,6 @@ export default function HomePage() {
 
   const hasntRanAlgorithm = state === "graph-loaded";
   const ranAlgorithmAintPushRelabel = state === "ran-algorithm" && algorithm !== "push-relabel";
-  const hasRanAlgorithm = state === "ran-algorithm" && algorithm === "push-relabel";
 
   if (!graph) return <p className={centerClasses}>Please upload your graph</p>;
 
@@ -26,7 +25,7 @@ export default function HomePage() {
   const visibleLinks: { source: number; target: number }[] = [];
 
   if (pair) {
-    const paths = graph.pushRelabel[pair]!.paths;
+    const paths = graph.pushRelabel.raw[pair]!.paths;
     const allPaths = paths.reduce((accumulator, current) => accumulator.concat(current), []);
 
     visibleNodes = Array.from(new Set(allPaths));

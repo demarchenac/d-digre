@@ -56,7 +56,7 @@ export function WithGraphControls() {
           row.map((nodeFlow) => (nodeFlow > 0 ? 1 : 0)),
         );
 
-        withPushRelabel.pushRelabel[`${source}_${target}`] = {
+        withPushRelabel.pushRelabel.raw[`${source}_${target}`] = {
           ...pushRelabelMetadata,
           paths: pathsWithoutRepeatingNode,
           capacities,

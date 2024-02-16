@@ -47,7 +47,10 @@ export type DirectedGraph = {
   adjacency: number[][];
   nodes: DirectedNode[];
   links: Link[];
-  pushRelabel: Record<`${number}_${number}`, PushRelabelMetadata>;
+  pushRelabel: {
+    raw: Record<`${number}_${number}`, PushRelabelMetadata>;
+    trimmed: Record<`${number}_${number}`, PushRelabelMetadata>;
+  };
 };
 
 export type BiDirectedGraph = {

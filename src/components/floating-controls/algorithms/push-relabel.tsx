@@ -31,10 +31,10 @@ export function WithPushRelabelControls() {
     setState("ran-algorithm");
   };
 
-  const rawActions = Object.keys(graph.pushRelabel).map((key) => {
+  const rawActions = Object.keys(graph.pushRelabel.raw).map((key) => {
     const literalKey = key as `${number}_${number}`;
     const [source, target] = key.split("_").map(Number);
-    const maxFlow = graph.pushRelabel[literalKey]!.maxFlow;
+    const maxFlow = graph.pushRelabel.raw[literalKey]!.maxFlow;
 
     if (source === undefined || target === undefined) return null;
 

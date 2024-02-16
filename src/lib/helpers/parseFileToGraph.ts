@@ -96,7 +96,7 @@ export async function parseFileToGraph({
     targets,
     nodes,
     links,
-    pushRelabel: {},
+    pushRelabel: { raw: {}, trimmed: {} },
   };
 
   return graph;

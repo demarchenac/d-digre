@@ -44,6 +44,7 @@ export function DirectedGraphWithWeights({
     source: { fill: "!fill-sky-500", stroke: "!stroke-sky-500" },
     target: { fill: "!fill-green-500", stroke: "!stroke-green-500" },
     default: { fill: "fill-slate-800", stroke: "stroke-slate-800" },
+    disabled: { fill: "fill-slate-700", stroke: "stroke-slate-700" },
     highlight: {
       node: { fill: "fill-amber-600" },
       edge: { fill: "fill-amber-800", stroke: "stroke-amber-800" },
@@ -52,8 +53,8 @@ export function DirectedGraphWithWeights({
 
   const graphId = parseGraphToId(data);
   const color = d3.scaleOrdinal(
-    [1, 2, 3],
-    [colors.source.fill, colors.default.fill, colors.target.fill],
+    [1, 2, 3, 4],
+    [colors.source.fill, colors.default.fill, colors.target.fill, colors.disabled.fill],
   );
 
   const nodes = useMemo(() => {
@@ -301,7 +302,10 @@ export function DirectedGraphWithWeights({
           {links.map((link) => {
             const linkId = parseLinkToLinkId(link);
             return (
-              <g key={linkId} className={cn({ hidden: !link.shouldRender })}>
+              <g
+                key={linkId}
+                className={cn({ "pointer-events-none opacity-10": !link.shouldRender })}
+              >
                 <defs>
                   <marker
                     id={`link-arrow-from-${link.source}-to-${link.target}`}
@@ -357,13 +361,19 @@ export function DirectedGraphWithWeights({
             );
           })}
         </g>
-        <g id="nodes" stroke="#fff" strokeWidth={strokeWidth}>
+        <g id="nodes" strokeWidth={strokeWidth}>
           {nodes.map((node) => (
-            <g key={node.id} className={cn({ hidden: !node.shouldRender })}>
+            <g
+              key={node.id}
+              className={cn({
+                "pointer-events-none opacity-10": !node.shouldRender,
+                "stroke-white": node.shouldRender,
+              })}
+            >
               <circle
                 key={node.id}
                 r={radius}
-                className={cn("cursor-pointer", color(node.set ?? 2))}
+                className={cn("cursor-pointer", color(node.shouldRender ? node.set ?? 2 : 4))}
               />
               <text textAnchor="middle" className="fill-slate-50 stroke-none" pointerEvents="none">
                 {node.id + labelIncrement}
