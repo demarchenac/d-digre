@@ -1,14 +1,14 @@
 "use client";
 
-import { useAtomValue } from "jotai";
+import { useAtomValue, useStore } from "jotai";
 import { DirectedGraphWithWeights } from "~/components/d3/directed-graph-with-weights";
 import { algorithmAtom, graphAtom, sourceTargetPairAtom, stateAtom } from "~/lib/jotai";
 
 export default function HomePage() {
-  const graph = useAtomValue(graphAtom);
-  const state = useAtomValue(stateAtom);
-  const algorithm = useAtomValue(algorithmAtom);
-  const pair = useAtomValue(sourceTargetPairAtom);
+  const graph = useAtomValue(graphAtom, { store: useStore() });
+  const state = useAtomValue(stateAtom, { store: useStore() });
+  const algorithm = useAtomValue(algorithmAtom, { store: useStore() });
+  const pair = useAtomValue(sourceTargetPairAtom, { store: useStore() });
 
   const centerClasses =
     "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform text-center";

@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAtom, useStore } from "jotai";
 import { Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { algorithmAtom, graphAtom, stateAtom } from "~/lib/jotai";
-import { pushRelabel } from "~/lib/helpers/pushRelabel";
-import { useRouter } from "next/navigation";
 import { type TuplePairPattern, type AppState } from "~/types";
-import { findSourceTargetPaths } from "~/lib/helpers/findSourceTargetPaths";
+import { findSourceTargetPaths, pushRelabel } from "~/lib/helpers";
+import { algorithmAtom, graphAtom, stateAtom } from "~/lib/jotai";
 
 const nonPermissibleStatus: AppState[] = ["no-graph"];
 

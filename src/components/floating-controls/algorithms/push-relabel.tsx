@@ -11,12 +11,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { algorithmAtom, graphAtom, sourceTargetPairAtom, stateAtom } from "~/lib/jotai";
 import { cn } from "~/lib/utils";
-import {
-  type RawPairPattern,
-  type AppState,
-  type TrimmedPairPattern,
-  type TrimmingMethod,
-} from "~/types";
+import type { RawPairPattern, AppState, TrimmedPairPattern, TrimmingMethod } from "~/types";
 
 const nonPermissibleStatus: AppState[] = ["no-graph", "graph-loaded"];
 
