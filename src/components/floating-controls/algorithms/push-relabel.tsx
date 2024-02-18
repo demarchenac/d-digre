@@ -53,7 +53,7 @@ export function WithPushRelabelControls() {
     };
 
     return (
-      <div className="m-2" key={key}>
+      <div className="m-2.5" key={key}>
         <Button
           variant="ghost"
           onClick={onPairClick}
@@ -90,7 +90,7 @@ export function WithPushRelabelControls() {
     };
 
     return (
-      <div className="m-2" key={key}>
+      <div className="m-2.5" key={key}>
         <Button
           variant="ghost"
           onClick={onPairClick}
@@ -131,7 +131,7 @@ export function WithPushRelabelControls() {
     };
 
     return (
-      <div className="m-2" key={key}>
+      <div className="m-2.5" key={key}>
         <Button
           variant="ghost"
           onClick={onPairClick}

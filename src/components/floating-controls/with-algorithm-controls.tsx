@@ -78,12 +78,15 @@ export function WithAlgorithmControls() {
       }
     }
 
+    let hasTrimmedSubgraphs = false;
+
     for (const raw of Object.entries(withPushRelabel.pushRelabel.raw)) {
       const [signedPair, metadata] = raw;
       const pair = signedPair.replace("raw:", "") as TuplePairPattern;
       shouldMergeWithTrimmed[pair] = false;
 
       if (minimalMaximumFlow < metadata.maxFlow) {
+        hasTrimmedSubgraphs = true;
         shouldMergeWithTrimmed[pair] = true;
         const pathsToRemove = metadata.maxFlow - minimalMaximumFlow;
 
@@ -164,58 +167,60 @@ export function WithAlgorithmControls() {
       paths: nonRepeatedPathsForRawMerged,
     };
 
-    for (const method of ["first", "longest", "random"] as TrimmingMethod[]) {
-      const trimmedMergedCapacity = zeros(graph.adjacency.length).map(() =>
-        zeros(graph.adjacency.length),
-      );
-      const trimmedMergedFlow = zeros(graph.adjacency.length).map(() =>
-        zeros(graph.adjacency.length),
-      );
+    if (hasTrimmedSubgraphs) {
+      for (const method of ["first", "longest", "random"] as TrimmingMethod[]) {
+        const trimmedMergedCapacity = zeros(graph.adjacency.length).map(() =>
+          zeros(graph.adjacency.length),
+        );
+        const trimmedMergedFlow = zeros(graph.adjacency.length).map(() =>
+          zeros(graph.adjacency.length),
+        );
 
-      const trimmedMergedPaths: string[] = [];
+        const trimmedMergedPaths: string[] = [];
 
-      for (const kindMap of Object.entries(shouldMergeWithTrimmed)) {
-        const [pair, shouldUseTrimmed] = kindMap as [TuplePairPattern, boolean];
+        for (const kindMap of Object.entries(shouldMergeWithTrimmed)) {
+          const [pair, shouldUseTrimmed] = kindMap as [TuplePairPattern, boolean];
 
-        const meta = shouldUseTrimmed
-          ? withPushRelabel.pushRelabel.trimmed[`trimmed_${method}:${pair}`]!
-          : withPushRelabel.pushRelabel.raw[`raw:${pair}`]!;
+          const meta = shouldUseTrimmed
+            ? withPushRelabel.pushRelabel.trimmed[`trimmed_${method}:${pair}`]!
+            : withPushRelabel.pushRelabel.raw[`raw:${pair}`]!;
 
-        meta.capacities.forEach((row, rowIndex) => {
-          row.forEach((node, nodeIndex) => {
-            trimmedMergedCapacity[rowIndex]![nodeIndex] = Math.max(
-              trimmedMergedCapacity[rowIndex]![nodeIndex]!,
-              node,
-            );
+          meta.capacities.forEach((row, rowIndex) => {
+            row.forEach((node, nodeIndex) => {
+              trimmedMergedCapacity[rowIndex]![nodeIndex] = Math.max(
+                trimmedMergedCapacity[rowIndex]![nodeIndex]!,
+                node,
+              );
+            });
           });
-        });
-        meta.flow.forEach((row, rowIndex) => {
-          row.forEach((node, nodeIndex) => {
-            trimmedMergedFlow[rowIndex]![nodeIndex] = Math.max(
-              trimmedMergedFlow[rowIndex]![nodeIndex]!,
-              node,
-            );
+          meta.flow.forEach((row, rowIndex) => {
+            row.forEach((node, nodeIndex) => {
+              trimmedMergedFlow[rowIndex]![nodeIndex] = Math.max(
+                trimmedMergedFlow[rowIndex]![nodeIndex]!,
+                node,
+              );
+            });
           });
-        });
 
-        meta.paths.forEach((path) => trimmedMergedPaths.push(path.join("-")));
+          meta.paths.forEach((path) => trimmedMergedPaths.push(path.join("-")));
+        }
+
+        const trimmedMergedAdjacency = trimmedMergedCapacity.map((row) =>
+          row.map((node) => (node > 0 ? 1 : 0)),
+        );
+
+        const nonRepeatedPathsForTrimmedMerged = Array.from(new Set(trimmedMergedPaths)).map(
+          (path) => path.split("-").map(Number),
+        );
+
+        withPushRelabel.pushRelabel.trimmedMerged[method] = {
+          capacities: trimmedMergedCapacity,
+          adjacency: trimmedMergedAdjacency,
+          flow: trimmedMergedFlow,
+          maxFlow: minimalMaximumFlow,
+          paths: nonRepeatedPathsForTrimmedMerged,
+        };
       }
-
-      const trimmedMergedAdjacency = trimmedMergedCapacity.map((row) =>
-        row.map((node) => (node > 0 ? 1 : 0)),
-      );
-
-      const nonRepeatedPathsForTrimmedMerged = Array.from(new Set(trimmedMergedPaths)).map((path) =>
-        path.split("-").map(Number),
-      );
-
-      withPushRelabel.pushRelabel.trimmedMerged[method] = {
-        capacities: trimmedMergedCapacity,
-        adjacency: trimmedMergedAdjacency,
-        flow: trimmedMergedFlow,
-        maxFlow: minimalMaximumFlow,
-        paths: nonRepeatedPathsForTrimmedMerged,
-      };
     }
 
     setGraph(withPushRelabel);

@@ -2,7 +2,7 @@
 
 import * as d3 from "d3";
 import { useMemo } from "react";
-import { useD3Render } from "~/hooks";
+import { useD3Render, useDimensions } from "~/hooks";
 import { parseGraphToId, parseLinkToLinkId } from "~/lib/helpers";
 import { cn } from "~/lib/utils";
 import type { DirectedGraph, SimulationLink, SimulationNode } from "~/types";
@@ -33,12 +33,9 @@ export function DirectedGraphWithWeights({
   data,
   visibleNodes,
   visibleLinks,
-  ...config
 }: DirectedGraphWithWeightsProps) {
   const strokeWidth = 2;
   const radius = 15;
-  const height = config.height ?? window.innerHeight;
-  const width = config.width ?? window.innerWidth;
 
   const colors = {
     source: { fill: "!fill-sky-500", stroke: "!stroke-sky-500" },
@@ -83,14 +80,19 @@ export function DirectedGraphWithWeights({
     return toRender;
   }, [data.links, visibleLinks]);
 
+  const [wrapperRef, dimensions] = useDimensions({
+    height: window.innerHeight,
+    width: window.innerWidth,
+  });
+
   const { svgRef, zoomRef } = useD3Render({
-    render(svg, zoomG) {
+    render(svg) {
       const simulation = d3
         .forceSimulation(nodes)
         .force("link", d3.forceLink(links).distance(150))
         .force("collide", d3.forceCollide().radius(radius * 2))
         .force("charge", d3.forceManyBody().strength(-(radius * 2 - 1)))
-        .force("center", d3.forceCenter(width / 2, height / 2));
+        .force("center", d3.forceCenter(dimensions.width / 2, dimensions.height / 2));
 
       const node = svg
         .selectAll<SVGCircleElement, SimulationNode>("circle")
@@ -273,133 +275,143 @@ export function DirectedGraphWithWeights({
           .on("drag", onDrag)
           .on("end", onDragEnd),
       );
-
-      if (zoomG) {
-        // fixes zooming on Mozilla Firefox.
-        if (navigator.userAgent.indexOf("Firefox") !== -1)
-          zoomG.style("transform-origin", "50% 50% 0");
-
-        const onZoom = ({ transform }: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-          zoomG.attr("transform", transform.toString());
-        };
-
-        const zoomHandler = d3
-          .zoom<SVGSVGElement, unknown>()
-          .extent([
-            [0, 0],
-            [width, height],
-          ])
-          .scaleExtent([1, 10])
-          .on("zoom", onZoom);
-        svg.call(zoomHandler);
-      }
     },
-    dependencies: [graphId],
+    onZoom: (svg, g) => {
+      // fixes zooming on Mozilla Firefox.
+      if (navigator.userAgent.indexOf("Firefox") !== -1) g.style("transform-origin", "50% 50% 0");
+
+      const onZoom = ({ transform }: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+        g.attr("transform", transform.toString());
+      };
+
+      const zoomHandler = d3
+        .zoom<SVGSVGElement, unknown>()
+        .extent([
+          [0, 0],
+          [dimensions.width, dimensions.height],
+        ])
+        .scaleExtent([0.5, 10])
+        .on("zoom", onZoom);
+      svg.call(zoomHandler);
+    },
+    renderDependencies: [graphId],
+    zoomDependencies: [dimensions.height, dimensions.width],
   });
 
   const labelIncrement = Number(data.startsAt1);
 
   return (
-    <svg ref={svgRef} width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-      <text x="16" y="95%" className="fill-slate-500 stroke-1 text-xs" pointerEvents="none">
-        {data.description}
-      </text>
-      <text x="16" y="97.5%" className="fill-slate-500 stroke-1 text-xs" pointerEvents="none">
-        {`${width}px x ${height}px`}
-      </text>
-      <g ref={zoomRef}>
-        <g id="links">
-          {links.map((link) => {
-            const linkId = parseLinkToLinkId(link);
-            return (
-              <g
-                key={linkId}
-                className={cn({ "pointer-events-none opacity-10": !link.shouldRender })}
-              >
-                <defs>
-                  <marker
-                    id={`link-arrow-from-${link.source}-to-${link.target}`}
-                    markerWidth="5"
-                    markerHeight="5"
-                    refX="7"
-                    refY="5"
-                    orient="auto"
-                    markerUnits="strokeWidth"
-                    viewBox="0 0 10 10"
+    <div ref={wrapperRef} className="h-screen w-screen ">
+      <svg
+        ref={svgRef}
+        width={dimensions.width}
+        height={dimensions.height}
+        viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+      >
+        <text x="16" y="95%" className="fill-slate-500 stroke-1 text-xs" pointerEvents="none">
+          {data.description}
+        </text>
+        <text x="16" y="97.5%" className="fill-slate-500 stroke-1 text-xs" pointerEvents="none">
+          {`${dimensions.width}px x ${dimensions.height}px`}
+        </text>
+        <g ref={zoomRef}>
+          <g id="links">
+            {links.map((link) => {
+              const linkId = parseLinkToLinkId(link);
+              return (
+                <g
+                  key={linkId}
+                  className={cn({ "pointer-events-none opacity-10": !link.shouldRender })}
+                >
+                  <defs>
+                    <marker
+                      id={`link-arrow-from-${link.source}-to-${link.target}`}
+                      markerWidth="5"
+                      markerHeight="5"
+                      refX="7"
+                      refY="5"
+                      orient="auto"
+                      markerUnits="strokeWidth"
+                      viewBox="0 0 10 10"
+                    >
+                      <path
+                        d="M0,0L0,10L10,5"
+                        className={cn(
+                          colors.default.fill,
+                          "transition-[fill] duration-300",
+                          `link-source-${link.source}-marker link-target-${link.target}-marker`,
+                          {
+                            "hide-render-link-marker": !link.shouldRender,
+                          },
+                        )}
+                      />
+                    </marker>
+                  </defs>
+                  <path
+                    className={cn(
+                      colors.default.stroke,
+                      "link transition-[stroke] duration-300",
+                      `link-source-${link.source} link-target-${link.target}`,
+                      {
+                        "hide-render-link": !link.shouldRender,
+                      },
+                    )}
+                    strokeWidth={3}
+                    markerEnd={`url(#link-arrow-from-${link.source}-to-${link.target})`}
+                    strokeLinecap="round"
+                  />
+                  <rect
+                    rx="4"
+                    id={`${linkId}-text-background`}
+                    className={cn({
+                      [colors.default.fill]: data.renderWeights,
+                      "stroke-zinc-500 stroke-1": data.renderWeights,
+                      "fill-none stroke-none": !data.renderWeights,
+                      hidden: !link.shouldRender,
+                    })}
+                  />
+                  <text
+                    id={`${linkId}-text`}
+                    textAnchor="middle"
+                    className={cn("text-[10px]", {
+                      "fill-zinc-200 dark:fill-zinc-500": data.renderWeights,
+                      "fill-none": !data.renderWeights,
+                      hidden: !link.shouldRender,
+                    })}
+                    pointerEvents="none"
                   >
-                    <path
-                      d="M0,0L0,10L10,5"
-                      className={cn(
-                        colors.default.fill,
-                        "transition-[fill] duration-300",
-                        `link-source-${link.source}-marker link-target-${link.target}-marker`,
-                        {
-                          "hide-render-link-marker": !link.shouldRender,
-                        },
-                      )}
-                    />
-                  </marker>
-                </defs>
-                <path
-                  className={cn(
-                    colors.default.stroke,
-                    "link transition-[stroke] duration-300",
-                    `link-source-${link.source} link-target-${link.target}`,
-                    {
-                      "hide-render-link": !link.shouldRender,
-                    },
-                  )}
-                  strokeWidth={3}
-                  markerEnd={`url(#link-arrow-from-${link.source}-to-${link.target})`}
-                  strokeLinecap="round"
-                />
-                <rect
-                  rx="4"
-                  id={`${linkId}-text-background`}
-                  className={cn({
-                    [colors.default.fill]: data.renderWeights,
-                    "stroke-zinc-500 stroke-1": data.renderWeights,
-                    "fill-none stroke-none": !data.renderWeights,
-                    hidden: !link.shouldRender,
-                  })}
+                    {link.weight}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+          <g id="nodes" strokeWidth={strokeWidth}>
+            {nodes.map((node) => (
+              <g
+                key={node.id}
+                className={cn({
+                  "pointer-events-none opacity-10": !node.shouldRender,
+                  "stroke-white": node.shouldRender,
+                })}
+              >
+                <circle
+                  key={node.id}
+                  r={radius}
+                  className={cn("cursor-pointer", color(node.shouldRender ? node.set ?? 2 : 4))}
                 />
                 <text
-                  id={`${linkId}-text`}
                   textAnchor="middle"
-                  className={cn("text-[10px]", {
-                    "fill-zinc-200 dark:fill-zinc-500": data.renderWeights,
-                    "fill-none": !data.renderWeights,
-                    hidden: !link.shouldRender,
-                  })}
+                  className="fill-slate-50 stroke-none"
                   pointerEvents="none"
                 >
-                  {link.weight}
+                  {node.id + labelIncrement}
                 </text>
               </g>
-            );
-          })}
+            ))}
+          </g>
         </g>
-        <g id="nodes" strokeWidth={strokeWidth}>
-          {nodes.map((node) => (
-            <g
-              key={node.id}
-              className={cn({
-                "pointer-events-none opacity-10": !node.shouldRender,
-                "stroke-white": node.shouldRender,
-              })}
-            >
-              <circle
-                key={node.id}
-                r={radius}
-                className={cn("cursor-pointer", color(node.shouldRender ? node.set ?? 2 : 4))}
-              />
-              <text textAnchor="middle" className="fill-slate-50 stroke-none" pointerEvents="none">
-                {node.id + labelIncrement}
-              </text>
-            </g>
-          ))}
-        </g>
-      </g>
-    </svg>
+      </svg>
+    </div>
   );
 }
