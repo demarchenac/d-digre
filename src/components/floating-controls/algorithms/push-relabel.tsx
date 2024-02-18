@@ -222,7 +222,9 @@ export function WithPushRelabelControls() {
         key="raw-merged"
         variant="ghost"
         onClick={onSelectRawMergedClick}
-        className={cn("w-full", { "ring-2 ring-green-600": state === "selected-raw-merged" })}
+        className={cn("mb-1 mt-1.5 w-full", {
+          "ring-2 ring-green-600": state === "selected-raw-merged",
+        })}
       >
         Raw Subgraphs Merged
       </Button>
