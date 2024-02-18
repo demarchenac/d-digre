@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             enableSystem
             disableTransitionOnChange
           >
-            <header className="absolute left-0 top-0 z-10 flex w-screen justify-end  p-4">
+            <header className="absolute right-0 top-0 z-10 flex w-fit justify-end  p-4">
               <ThemeToggle />
             </header>
 
