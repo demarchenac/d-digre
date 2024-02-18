@@ -17,21 +17,15 @@ export function useDimensions(dms?: Dimensions): UseDimensionsReturnValue {
   const [height, changeHeight] = useState(dms?.height ?? 0);
 
   useEffect(() => {
-    console.log("!");
-
     const element = ref.current;
     if (!element) return;
 
     const resizeObserver = new ResizeObserver((entries) => {
-      console.log("!x2");
-      console.log({ entries });
       if (!Array.isArray(entries)) return;
       if (!entries.length) return;
 
       const entry = entries[0];
       if (!entry) return;
-
-      console.log({ sizes: entry.contentRect });
 
       if (width != entry.contentRect.width) changeWidth(entry.contentRect.width);
       if (height != entry.contentRect.height) changeHeight(entry.contentRect.height);
