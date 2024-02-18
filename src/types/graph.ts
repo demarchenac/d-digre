@@ -52,3 +52,11 @@ export type BiDirectedGraph = {
   nodes: BiDirectedNode[];
   links: Link[];
 };
+
+export type DownloadableGraph = {
+  nodeCount: number;
+  maxFlow: number;
+  targetCount: number;
+  targets: number[];
+  adjacency: number[][];
+};

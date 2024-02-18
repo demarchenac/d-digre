@@ -17,9 +17,17 @@ import {
   trimmingMethodAtom,
 } from "~/lib/jotai";
 import { cn } from "~/lib/utils";
-import type { RawPairPattern, AppState, TrimmedPairPattern, TrimmingMethod } from "~/types";
+import type {
+  RawPairPattern,
+  AppState,
+  TrimmedPairPattern,
+  TrimmingMethod,
+  DownloadableGraph,
+  PushRelabelMetadata,
+} from "~/types";
 
 const nonPermissibleStatus: AppState[] = ["no-graph", "graph-loaded"];
+const downloadableStatus: AppState[] = ["selected-raw-merged", "selected-trimmed-merged"];
 
 export function WithPushRelabelControls() {
   const [state, setState] = useAtom(stateAtom, { store: useStore() });
@@ -31,6 +39,8 @@ export function WithPushRelabelControls() {
   if (nonPermissibleStatus.includes(state)) return null;
   if (algorithm !== "push-relabel") return null;
   if (!graph) return null;
+
+  const canDownloadSelection = downloadableStatus.includes(state);
 
   const labelIncrement = Number(graph.startsAt1 ?? false);
 
@@ -156,6 +166,37 @@ export function WithPushRelabelControls() {
     setState("selected-raw-merged");
   };
 
+  const onDownloadClick = () => {
+    const toExport = {} as DownloadableGraph;
+    let metadata = {} as PushRelabelMetadata;
+    if (state === "selected-raw-merged" && graph.pushRelabel.rawMerged) {
+      metadata = graph.pushRelabel.rawMerged;
+    }
+    if (state === "selected-trimmed-merged" && trimmingMethod) {
+      metadata = graph.pushRelabel.trimmedMerged[trimmingMethod];
+    }
+
+    toExport.nodeCount = metadata.adjacency.length;
+    toExport.maxFlow = metadata.maxFlow;
+    const targets = Array.from(new Set(metadata.paths.map((path) => path.at(-1)))) as number[];
+    toExport.targetCount = targets.length;
+    toExport.targets = targets;
+    toExport.adjacency = metadata.adjacency;
+
+    const lines: string[] = [];
+    lines.push(`${toExport.nodeCount} ${toExport.maxFlow} ${toExport.targetCount}\n`);
+    lines.push(targets.join(" ") + "\n");
+    toExport.adjacency.forEach((row) => lines.push(row.join(" ") + "\n"));
+
+    const url = window.URL.createObjectURL(new Blob(lines));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${graph.description}.txt`);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode?.removeChild(link);
+  };
+
   return (
     <>
       <Button key="reset-pair" variant="ghost" onClick={onResetClick}>
@@ -177,7 +218,12 @@ export function WithPushRelabelControls() {
         </Accordion>
       )}
 
-      <Button key="raw-merged" variant="ghost" onClick={onSelectRawMergedClick}>
+      <Button
+        key="raw-merged"
+        variant="ghost"
+        onClick={onSelectRawMergedClick}
+        className={cn("w-full", { "ring-2 ring-green-600": state === "selected-raw-merged" })}
+      >
         Raw Subgraphs Merged
       </Button>
 
@@ -188,6 +234,12 @@ export function WithPushRelabelControls() {
             <AccordionContent>{mergedTrimmedActions}</AccordionContent>
           </AccordionItem>
         </Accordion>
+      )}
+
+      {canDownloadSelection && (
+        <Button key="download" variant="ghost" onClick={onDownloadClick}>
+          Export Selection
+        </Button>
       )}
     </>
   );
