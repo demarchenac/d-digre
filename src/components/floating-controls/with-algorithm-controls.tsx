@@ -93,7 +93,11 @@ export function WithAlgorithmControls() {
         const removingFirst = Array.from(metadata.paths);
         const removingRandom = shuffle(metadata.paths);
         const removingLongest = Array.from(metadata.paths);
-        removingLongest.sort((a, b) => a.length + b.length);
+        removingLongest.sort((a, b) => {
+          if (a.length > b.length) return -1;
+          else if (a.length < b.length) return 1;
+          return 0;
+        });
 
         for (let removed = 0; removed < pathsToRemove; removed++) {
           removingFirst.shift();
