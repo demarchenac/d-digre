@@ -4,6 +4,7 @@ export { getRandomInt } from "./getRandomInt";
 export { parseLinkIdToLink, parseLinkToLinkId, parseToPartialLinkId } from "./linkAndIdParsing";
 export { parseFileToGraph } from "./parseFileToGraph";
 export { parseGraphToId } from "./parseGraphToId";
+export { processFolderUpload } from "./processFloderUpload";
 export { pushRelabel } from "./pushRelabel";
 export { range } from "./range";
 export { shuffle } from "./shuffle";

@@ -7,6 +7,9 @@ export type DirectedNode = {
   set?: 1 | 2 | 3;
   outgoing: number[];
   incoming: number[];
+  height: number;
+  depth: number;
+  maxDepth: number;
 };
 
 export type BiDirectedNode = {
@@ -15,6 +18,8 @@ export type BiDirectedNode = {
 };
 
 export type Link = {
+  from: number;
+  to: number;
   source: number;
   target: number;
   weight: number;
@@ -33,6 +38,7 @@ export type PushRelabelMetadata = {
 export type DirectedGraph = {
   startsAt1: boolean;
   renderWeights: boolean;
+  maxDepth: number;
   description: string;
   sources: number[];
   targets: number[];

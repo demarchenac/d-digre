@@ -1,5 +1,5 @@
-import { GraphUploadDialog } from "~/components/graph-upload-dialog";
 import { GraphControls } from "./graph-controls";
+import { GraphUploadDialog } from "./graph-upload-dialog";
 
 export function FloatingControls() {
   return (

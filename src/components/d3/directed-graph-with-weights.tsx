@@ -68,11 +68,12 @@ export function DirectedGraphWithWeights({
 
   const links = useMemo(() => {
     let toRender = data.links.map((link) => ({ ...link, shouldRender: true })) as SimulationLink[];
+
     if (visibleLinks?.length) {
       toRender = toRender.map((link) => ({
         ...link,
         shouldRender: visibleLinks.some(
-          (visibleLink) => visibleLink.source === link.source && visibleLink.target === link.target,
+          (visibleLink) => visibleLink.source === link.from && visibleLink.target === link.to,
         ),
       }));
     }
@@ -85,14 +86,39 @@ export function DirectedGraphWithWeights({
     width: window.innerWidth,
   });
 
+  const heightSize = 120;
+  const sizedWith = dimensions.width - (320 + 16 * 2) * 2 - 16 * 2;
+  const visibleWidth = d3.min([sizedWith, 650])!;
+  const levelSize = data.maxDepth;
+  const columnSize = 100;
+  let fixedWidth = columnSize * levelSize;
+  if (levelSize > 0 && visibleWidth / levelSize < columnSize)
+    fixedWidth = visibleWidth + (columnSize - visibleWidth / levelSize) * levelSize;
+  else if (levelSize > 0 && visibleWidth / levelSize > columnSize)
+    fixedWidth = visibleWidth - (visibleWidth / levelSize - columnSize) * levelSize;
+
   const { svgRef, zoomRef } = useD3Render({
     render(svg) {
       const simulation = d3
         .forceSimulation(nodes)
-        .force("link", d3.forceLink(links).distance(150))
-        .force("collide", d3.forceCollide().radius(radius * 2))
-        .force("charge", d3.forceManyBody().strength(-(radius * 2 - 1)))
-        .force("center", d3.forceCenter(dimensions.width / 2, dimensions.height / 2));
+        .force("center", d3.forceCenter(dimensions.width / 2, dimensions.height / 2))
+        .force("collide", d3.forceCollide(radius * 2))
+        .force("link", d3.forceLink(links).strength(0.05))
+        .force("y", d3.forceY<SimulationNode>((n) => n.height * heightSize).strength(1))
+        .force(
+          "x",
+          d3
+            .forceX<SimulationNode>(({ height, depth, maxDepth }) => {
+              const isHeightOdd = height % 2 === 0;
+              const increment = Number(isHeightOdd) * (columnSize / 2);
+              const stripSize =
+                maxDepth === 0
+                  ? (fixedWidth - columnSize / 2) / 2
+                  : depth * (fixedWidth / maxDepth);
+              return stripSize + increment;
+            })
+            .strength(1),
+        );
 
       const node = svg
         .selectAll<SVGCircleElement, SimulationNode>("circle")
@@ -193,10 +219,14 @@ export function DirectedGraphWithWeights({
         // need to make an `as assertion`. The x,y properties added by the SimulationNodeDatum
         // interface are of type number | undefined, so a non-null assertion operator is used
 
-        const getX = (value: unknown) => (value as SimulationNode).x!;
-        const getY = (value: unknown) => (value as SimulationNode).y!;
+        const getX = (value: number | d3.SimulationNodeDatum) =>
+          typeof value === "number" ? 0 : value.x ?? 0;
+        const getY = (value: number | d3.SimulationNodeDatum) =>
+          typeof value === "number" ? 0 : value.y ?? 0;
+
         const getMiddleX = (link: SimulationLink) => (getX(link.source) + getX(link.target)) / 2;
         const getMiddleY = (link: SimulationLink) => (getY(link.source) + getY(link.target)) / 2;
+
         const getLinkTextBB = (link: SimulationLink) => {
           const textId = parseLinkToLinkId(link) + "-text";
           const text = document.getElementById(textId);
@@ -207,24 +237,28 @@ export function DirectedGraphWithWeights({
         };
 
         node.attr("cx", (d) => d.x!).attr("cy", (d) => d.y!);
-
         nodeId.attr("x", (d) => d.x!).attr("y", (d) => d.y! + 6);
 
         link.attr("d", (link) => {
-          const diffX = getX(link.target) - getX(link.source);
-          const diffY = getY(link.target) - getY(link.source);
+          const sourceX = getX(link.source); // x1
+          const sourceY = getY(link.source); // y1
+          const targetX = getX(link.target); // x2
+          const targetY = getY(link.target); // y2
+
+          const diffX = targetX - sourceX;
+          const diffY = targetY - sourceY;
 
           // Length of path from center of source node to center of target node
           const pathLength = Math.sqrt(diffX * diffX + diffY * diffY);
           const arrowOffset = 8;
 
-          // x and y distances from center to outside edge of target node
+          // X and Y distances from center to outside edge of target node
           const nodeRadius = radius + arrowOffset + strokeWidth / 2;
           const offsetX = (diffX * nodeRadius) / pathLength;
           const offsetY = (diffY * nodeRadius) / pathLength;
 
-          const startingPoint = `${getX(link.source) + offsetX},${getY(link.source) + offsetY}`;
-          const endingPoint = `${getX(link.target) - offsetX},${getY(link.target) - offsetY}`;
+          const startingPoint = `${sourceX + offsetX},${sourceY + offsetY}`;
+          const endingPoint = `${targetX - offsetX},${targetY - offsetY}`;
 
           const toDraw = `M ${startingPoint} L${endingPoint}`;
 
@@ -251,7 +285,7 @@ export function DirectedGraphWithWeights({
       function onDragStart(
         event: d3.D3DragEvent<SVGCircleElement, SimulationNode, SimulationNode>,
       ) {
-        if (!event.active) simulation.alphaTarget(0.3).restart();
+        if (!event.active) simulation.alphaTarget(0.05).restart();
         event.subject.fx = event.subject.x;
         event.subject.fy = event.subject.y;
       }
@@ -325,7 +359,7 @@ export function DirectedGraphWithWeights({
                 >
                   <defs>
                     <marker
-                      id={`link-arrow-from-${link.source}-to-${link.target}`}
+                      id={`link-arrow-from-${link.from}-to-${link.to}`}
                       markerWidth="5"
                       markerHeight="5"
                       refX="7"
@@ -339,7 +373,7 @@ export function DirectedGraphWithWeights({
                         className={cn(
                           colors.default.fill,
                           "transition-[fill] duration-300",
-                          `link-source-${link.source}-marker link-target-${link.target}-marker`,
+                          `link-source-${link.from}-marker link-target-${link.to}-marker`,
                           {
                             "hide-render-link-marker": !link.shouldRender,
                           },
@@ -351,13 +385,13 @@ export function DirectedGraphWithWeights({
                     className={cn(
                       colors.default.stroke,
                       "link transition-[stroke] duration-300",
-                      `link-source-${link.source} link-target-${link.target}`,
+                      `link-source-${link.from} link-target-${link.to}`,
                       {
                         "hide-render-link": !link.shouldRender,
                       },
                     )}
                     strokeWidth={3}
-                    markerEnd={`url(#link-arrow-from-${link.source}-to-${link.target})`}
+                    markerEnd={`url(#link-arrow-from-${link.from}-to-${link.to})`}
                     strokeLinecap="round"
                   />
                   <rect
