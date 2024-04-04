@@ -23,7 +23,7 @@ import type {
   TrimmedPairPattern,
   TrimmingMethod,
   DownloadableGraph,
-  PushRelabelMetadata,
+  AlgorithmMetadata,
 } from "~/types";
 
 const nonPermissibleStatus: AppState[] = ["no-graph", "graph-loaded"];
@@ -168,7 +168,7 @@ export function WithPushRelabelControls() {
 
   const onDownloadClick = () => {
     const toExport = {} as DownloadableGraph;
-    let metadata = {} as PushRelabelMetadata;
+    let metadata = {} as AlgorithmMetadata;
     if (state === "selected-raw-merged" && graph.pushRelabel.rawMerged) {
       metadata = graph.pushRelabel.rawMerged;
     }

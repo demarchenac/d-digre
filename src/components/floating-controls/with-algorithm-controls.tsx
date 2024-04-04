@@ -6,7 +6,7 @@ import { useAtom, useStore } from "jotai";
 import { Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import type { TuplePairPattern, AppState, TrimmingMethod } from "~/types";
-import { findSourceTargetPaths, pushRelabel, shuffle, zeros } from "~/lib/helpers";
+import { findSourceTargetPaths, getUniquePaths, pushRelabel, shuffle, zeros } from "~/lib/helpers";
 import { algorithmAtom, graphAtom, stateAtom } from "~/lib/jotai";
 
 const nonPermissibleStatus: AppState[] = ["no-graph"];
@@ -36,34 +36,24 @@ export function WithAlgorithmControls() {
       for (const target of graph.targets) {
         const pushRelabelMetadata = pushRelabel(graph.capacities, source, target);
 
-        const paths = findSourceTargetPaths(graph.adjacency, source, target);
+        const allPaths = findSourceTargetPaths(graph.adjacency, source, target);
+        const paths = getUniquePaths(allPaths, source, target);
 
-        let usedNodes: number[] = [];
-        const pathsWithoutRepeatingNode = [];
-        for (const path of paths) {
-          const hasRepeatedNode = path
-            .filter((node) => node !== source && node !== target)
-            .some((node) => usedNodes.includes(node));
-
-          if (hasRepeatedNode) continue;
-
-          usedNodes = usedNodes.concat(path);
-          pathsWithoutRepeatingNode.push(path);
-        }
-
-        const capacities = pushRelabelMetadata.flow.map((row) =>
+        const subgraphCapacities = pushRelabelMetadata.flow.map((row) =>
           row.map((nodeFlow) => (nodeFlow > 0 ? nodeFlow : 0)),
         );
 
-        const adjacency = pushRelabelMetadata.flow.map((row) =>
+        const subgraphAdjacency = pushRelabelMetadata.flow.map((row) =>
           row.map((nodeFlow) => (nodeFlow > 0 ? 1 : 0)),
         );
 
         const metadata = {
           ...pushRelabelMetadata,
-          paths: pathsWithoutRepeatingNode,
-          capacities,
-          adjacency,
+          paths: paths,
+          capacities: subgraphCapacities,
+          adjacency: subgraphAdjacency,
+          nodeCount: subgraphAdjacency.length,
+          targets: Array.from(graph.targets),
         };
 
         withPushRelabel.pushRelabel.raw[`raw:${source}_${target}`] = metadata;
@@ -78,7 +68,7 @@ export function WithAlgorithmControls() {
       }
     }
 
-    let hasTrimmedSubgraphs = false;
+    let shouldTrimSubgraphs = false;
 
     for (const raw of Object.entries(withPushRelabel.pushRelabel.raw)) {
       const [signedPair, metadata] = raw;
@@ -86,7 +76,7 @@ export function WithAlgorithmControls() {
       shouldMergeWithTrimmed[pair] = false;
 
       if (minimalMaximumFlow < metadata.maxFlow) {
-        hasTrimmedSubgraphs = true;
+        shouldTrimSubgraphs = true;
         shouldMergeWithTrimmed[pair] = true;
         const pathsToRemove = metadata.maxFlow - minimalMaximumFlow;
 
@@ -169,9 +159,11 @@ export function WithAlgorithmControls() {
       flow: rawMergedFlow,
       maxFlow: maximalMaximumFlow,
       paths: nonRepeatedPathsForRawMerged,
+      nodeCount: rawMergedAdjacency.length,
+      targets: Array.from(graph.targets),
     };
 
-    if (hasTrimmedSubgraphs) {
+    if (shouldTrimSubgraphs) {
       for (const method of ["first", "longest", "random"] as TrimmingMethod[]) {
         const trimmedMergedCapacity = zeros(graph.adjacency.length).map(() =>
           zeros(graph.adjacency.length),
@@ -223,6 +215,8 @@ export function WithAlgorithmControls() {
           flow: trimmedMergedFlow,
           maxFlow: minimalMaximumFlow,
           paths: nonRepeatedPathsForTrimmedMerged,
+          nodeCount: trimmedMergedAdjacency.length,
+          targets: Array.from(graph.targets),
         };
       }
     }

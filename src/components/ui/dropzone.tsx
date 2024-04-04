@@ -1,43 +1,90 @@
 "use client";
 
 import { cn } from "~/lib/utils";
-import { type AcceptAttribute, useDropzone } from "~/hooks";
+import {
+  useDropzone,
+  type Accept,
+  type DropzoneInputProps as InitialDropzoneInputProps,
+  type DropEvent,
+} from "react-dropzone";
 import { MimeTypeIcon } from "./mime-type-icon";
+import { useState } from "react";
+import { processFolderUpload } from "~/lib/helpers";
+import { type FileWithFolder, type FileDTO } from "~/types";
+
+type DropzoneInputProps = InitialDropzoneInputProps & { webkitdirectory: string };
 
 export type DropzoneProps = {
   multiple?: boolean;
+  isForFolderUpload?: boolean;
   id?: string;
   className?: string;
   description?: string;
-  accept?: Partial<AcceptAttribute>;
+  accept?: Accept;
   onUpload?: (files: File[]) => void;
+  onFolderUpload?: (files: File[]) => void;
 };
 
 const defaultProps: DropzoneProps = {
   multiple: false,
+  isForFolderUpload: false,
   className: "",
   description: "Drag Files to Upload or Click Here",
   accept: { "text/plain": [".txt", ".csv"] },
   onUpload: () => {
     console.warn("Empty onUpload handler");
   },
+  onFolderUpload: () => {
+    console.warn("Empty onFolderUpload handler");
+  },
 };
 
 export function Dropzone({
   id,
   multiple = defaultProps.multiple,
+  isForFolderUpload = defaultProps.isForFolderUpload,
   className = defaultProps.className,
   description = defaultProps.description,
   accept = defaultProps.accept,
-  onUpload = defaultProps.onUpload,
+  onUpload: onDropzoneUpload = defaultProps.onUpload,
+  onFolderUpload = defaultProps.onFolderUpload,
 }: DropzoneProps = defaultProps) {
+  const [directoryFiles, setDirectoryFiles] = useState<FileDTO[]>([]);
+
+  const handleFolderUpload = (event: DropEvent) =>
+    processFolderUpload(event, {
+      onUpload: (files) => {
+        setDirectoryFiles(files);
+        onFolderUpload?.(files as File[]);
+      },
+    });
+
+  const handleDefaultUpload = async (event: DropEvent): Promise<FileDTO[]> => {
+    const fileHandles = event as unknown as FileSystemFileHandle[];
+    return Promise.all(fileHandles.map((handle) => handle.getFile()));
+  };
+
   const {
     acceptedFiles: accepted,
     getRootProps,
     getInputProps,
-  } = useDropzone({ multiple, accept, onDrop: onUpload });
-  const [file] = accepted;
+  } = useDropzone({
+    accept,
+    multiple,
+    onDrop: onDropzoneUpload,
+    useFsAccessApi: !isForFolderUpload,
+    getFilesFromEvent: isForFolderUpload ? handleFolderUpload : handleDefaultUpload,
+  });
+
+  const selectedFiles = (isForFolderUpload ? directoryFiles : accepted) as File[];
+  const [file] = selectedFiles;
   const [mime] = Object.keys(accept ?? {});
+
+  const files = selectedFiles.length;
+  const folder = isForFolderUpload && file ? (file as FileWithFolder).folder : null;
+  const props = isForFolderUpload
+    ? ({ webkitdirectory: "true" } as DropzoneInputProps)
+    : ({} as DropzoneInputProps);
 
   return (
     <div
@@ -50,13 +97,20 @@ export function Dropzone({
       })}
     >
       <div className="flex items-center justify-center gap-2">
-        <MimeTypeIcon mimeType={mime} />
-        {!multiple && file && <p className="text-sm text-muted-foreground">{file.name}</p>}
+        <MimeTypeIcon mimeType={mime} isFolder={isForFolderUpload} />
+        {!multiple && !isForFolderUpload && file && (
+          <p className="text-sm text-muted-foreground">{file.name}</p>
+        )}
+        {folder && (
+          <p className="text-sm text-muted-foreground">
+            {folder} ({files})
+          </p>
+        )}
       </div>
       <p className="leading-7 [&:not(:first-child)]:mt-6">{description}</p>
-      <input {...getInputProps()} />
+      <input {...getInputProps({ ...props })} />
     </div>
   );
 }
 
-Dropzone.displayName = "Button";
+Dropzone.displayName = "Dropzone";

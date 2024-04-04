@@ -6,6 +6,7 @@ import { ThemeToggle } from "~/components/ui/theme-toggle";
 import { ThemeProvider } from "~/components/theme-provider";
 import { JotaiProvider } from "~/components/jotai-provider";
 import { FloatingControls } from "~/components/floating-controls";
+import { BatchFloatingControls } from "~/components/batch-floating-controls/batch-floating-controls";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -32,8 +33,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <header className="absolute right-0 top-0 z-10 flex w-fit justify-end  p-4">
               <ThemeToggle />
             </header>
-
             <FloatingControls />
+            <BatchFloatingControls />
 
             <main>{children}</main>
           </ThemeProvider>

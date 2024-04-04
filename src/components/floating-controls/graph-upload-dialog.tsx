@@ -62,12 +62,13 @@ export function GraphUploadDialog() {
             <DialogHeader>
               <DialogTitle>Upload Graph</DialogTitle>
               <DialogDescription>
-                Upload your directed graph with weights as a CSV file
+                Upload your directed graph with weights as a TXT file
               </DialogDescription>
               <div className="flex flex-col pb-2 pt-4">
                 <DropzoneController
                   name="graphFiles"
                   description="Drag a file to upload your directed graph with weights"
+                  control={control}
                 />
               </div>
               <SwitchController name="startsAt1" label={'Nodes starts at "1"'} control={control} />
