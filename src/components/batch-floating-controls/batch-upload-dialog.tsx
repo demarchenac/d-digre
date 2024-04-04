@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { FormProvider, useForm, type SubmitHandler } from "react-hook-form";
 import { Loader2 } from "lucide-react";
-import { useAtom, useSetAtom, useStore } from "jotai";
+import JSZip from "jszip";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -14,14 +14,26 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { DropzoneController } from "~/components/rhf/dropzone-controller";
-import { SwitchController } from "~/components/rhf/switch-controller";
-import { parseFileToGraph } from "~/lib/helpers";
-import { algorithmAtom, graphAtom, sourceTargetPairAtom, stateAtom } from "~/lib/jotai";
+import { DropzoneController, SwitchController } from "~/components/rhf";
+import {
+  parseFileToAlgorithmMetadata,
+  getRawSolutions,
+  getTrimmedSolutions,
+  getRawMergedSolutions,
+  getTrimmedMergedSolutions,
+} from "~/lib/helpers";
+import { type AlgorithmMetadata, type TrimmingMethod } from "~/types";
 
 type FormValues = {
   startsAt1: boolean;
   graphFiles: File[];
+};
+
+type DownloadableFile = {
+  kind: TrimmingMethod | "raw";
+  name: string;
+  extension: string;
+  solution: AlgorithmMetadata;
 };
 
 export function BatchUploadDialog() {
@@ -30,12 +42,75 @@ export function BatchUploadDialog() {
   const rhfGraphUpload = useForm<FormValues>();
   const { control } = rhfGraphUpload;
 
-  const onSubmit: SubmitHandler<FormValues> = ({ graphFiles }) => {
+  const onSubmit: SubmitHandler<FormValues> = async ({ graphFiles, startsAt1 }) => {
     if (!graphFiles) return;
 
     setIsLoading(true);
-    console.log({ graphFiles });
+
+    const downloads: DownloadableFile[] = [];
+
+    for (const file of graphFiles) {
+      const lastDotIndex = file.name.lastIndexOf(".");
+      const name = file.name.substring(0, lastDotIndex);
+      const extension = file.name.substring(lastDotIndex);
+
+      const metadata = await parseFileToAlgorithmMetadata({ file, startsAt1 });
+      if (!metadata) continue;
+
+      const { adjacency } = metadata;
+
+      const { max, min, solutions: rawSolutions } = getRawSolutions(metadata);
+
+      const { first, longest, map, random, shouldTrimSubgraphs } = getTrimmedSolutions({
+        min,
+        solutions: rawSolutions,
+      });
+
+      const rawMerged = getRawMergedSolutions({ adjacency, map, max, solutions: rawSolutions });
+      const trimmedSolutions = getTrimmedMergedSolutions({
+        adjacency,
+        first,
+        longest,
+        map,
+        min,
+        random,
+        rawSolutions,
+        shouldTrimSubgraphs,
+      });
+
+      if (trimmedSolutions) {
+        Object.entries(trimmedSolutions).forEach(([method, solution]) => {
+          downloads.push({ kind: method as TrimmingMethod, name, extension, solution });
+        });
+      } else {
+        downloads.push({ kind: "raw", name, extension, solution: rawMerged });
+      }
+    }
+
+    const zip = new JSZip();
+
+    downloads.forEach((download) => {
+      const content = [
+        `${download.solution.nodeCount} ${download.solution.maxFlow} ${download.solution.targets.length}`,
+        download.solution.targets.join(" "),
+        ...download.solution.adjacency.map((row) => row.join(" ")),
+      ];
+
+      zip.file(`${download.name}_${download.kind}${download.extension}`, content.join("\n"));
+    });
+
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `batch_solutions_${Date.now()}.zip`);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode?.removeChild(link);
+
     setIsLoading(false);
+    rhfGraphUpload.reset();
+    setOpen(false);
   };
 
   return (
@@ -57,9 +132,16 @@ export function BatchUploadDialog() {
                   name="graphFiles"
                   description="Drag a folder to upload multiple directed graphs within it to process them"
                   accept={{ "text/plain": [] }}
+                  control={control}
                 />
               </div>
             </DialogHeader>
+            <SwitchController
+              name="startsAt1"
+              label={'Targets are "1" indexed'}
+              className="mt-2"
+              control={control}
+            />
             <DialogFooter>
               <Button type="submit">
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

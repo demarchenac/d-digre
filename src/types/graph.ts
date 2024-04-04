@@ -27,12 +27,14 @@ export type Link = {
   shouldRender: boolean;
 };
 
-export type PushRelabelMetadata = {
+export type AlgorithmMetadata = {
   maxFlow: number;
+  nodeCount: number;
+  targets: number[];
   flow: number[][];
   paths: number[][];
   capacities: number[][];
-  adjacency: number[][];
+  adjacency: (0 | 1)[][];
 };
 
 export type DirectedGraph = {
@@ -43,14 +45,14 @@ export type DirectedGraph = {
   sources: number[];
   targets: number[];
   capacities: number[][];
-  adjacency: number[][];
+  adjacency: (0 | 1)[][];
   nodes: DirectedNode[];
   links: Link[];
   pushRelabel: {
-    raw: Record<PairPattern, PushRelabelMetadata>;
-    trimmed: Record<PairPattern, PushRelabelMetadata>;
-    rawMerged?: PushRelabelMetadata;
-    trimmedMerged: Record<TrimmingMethod, PushRelabelMetadata> | Record<string, never>;
+    raw: Record<PairPattern, AlgorithmMetadata>;
+    trimmed: Record<PairPattern, AlgorithmMetadata>;
+    rawMerged?: AlgorithmMetadata;
+    trimmedMerged: Record<TrimmingMethod, AlgorithmMetadata> | Record<string, never>;
   };
 };
 
@@ -64,5 +66,5 @@ export type DownloadableGraph = {
   maxFlow: number;
   targetCount: number;
   targets: number[];
-  adjacency: number[][];
+  adjacency: (0 | 1)[][];
 };

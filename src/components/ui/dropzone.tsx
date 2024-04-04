@@ -22,6 +22,7 @@ export type DropzoneProps = {
   description?: string;
   accept?: Accept;
   onUpload?: (files: File[]) => void;
+  onFolderUpload?: (files: File[]) => void;
 };
 
 const defaultProps: DropzoneProps = {
@@ -33,6 +34,9 @@ const defaultProps: DropzoneProps = {
   onUpload: () => {
     console.warn("Empty onUpload handler");
   },
+  onFolderUpload: () => {
+    console.warn("Empty onFolderUpload handler");
+  },
 };
 
 export function Dropzone({
@@ -43,16 +47,22 @@ export function Dropzone({
   description = defaultProps.description,
   accept = defaultProps.accept,
   onUpload: onDropzoneUpload = defaultProps.onUpload,
+  onFolderUpload = defaultProps.onFolderUpload,
 }: DropzoneProps = defaultProps) {
   const [directoryFiles, setDirectoryFiles] = useState<FileDTO[]>([]);
 
-  const onUpload = (event: DropEvent) =>
+  const handleFolderUpload = (event: DropEvent) =>
     processFolderUpload(event, {
       onUpload: (files) => {
         setDirectoryFiles(files);
-        onDropzoneUpload?.(files as File[]);
+        onFolderUpload?.(files as File[]);
       },
     });
+
+  const handleDefaultUpload = async (event: DropEvent): Promise<FileDTO[]> => {
+    const fileHandles = event as unknown as FileSystemFileHandle[];
+    return Promise.all(fileHandles.map((handle) => handle.getFile()));
+  };
 
   const {
     acceptedFiles: accepted,
@@ -63,7 +73,7 @@ export function Dropzone({
     multiple,
     onDrop: onDropzoneUpload,
     useFsAccessApi: !isForFolderUpload,
-    getFilesFromEvent: isForFolderUpload ? onUpload : undefined,
+    getFilesFromEvent: isForFolderUpload ? handleFolderUpload : handleDefaultUpload,
   });
 
   const selectedFiles = (isForFolderUpload ? directoryFiles : accepted) as File[];

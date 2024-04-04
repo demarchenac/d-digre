@@ -6,6 +6,9 @@ import { Dropzone, type DropzoneProps } from "../ui/dropzone";
 type DropzoneControllerProps<TFieldValues extends FieldValues> = UseControllerProps<TFieldValues> &
   DropzoneProps;
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const noOp = () => {};
+
 export function DropzoneController<TFieldValues extends FieldValues>({
   name,
   rules,
@@ -15,9 +18,13 @@ export function DropzoneController<TFieldValues extends FieldValues>({
   ...props
 }: DropzoneControllerProps<TFieldValues>) {
   const controllerProps = { name, rules, shouldUnregister, defaultValue, control };
+
   const {
     field: { onChange },
   } = useController(controllerProps);
 
-  return <Dropzone {...props} id={name} onUpload={onChange} />;
+  const onUpload = props.isForFolderUpload ? noOp : onChange;
+  const onFolderUpload = props.isForFolderUpload ? onChange : noOp;
+
+  return <Dropzone {...props} id={name} onUpload={onUpload} onFolderUpload={onFolderUpload} />;
 }

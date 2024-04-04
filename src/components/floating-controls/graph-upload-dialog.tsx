@@ -68,6 +68,7 @@ export function GraphUploadDialog() {
                 <DropzoneController
                   name="graphFiles"
                   description="Drag a file to upload your directed graph with weights"
+                  control={control}
                 />
               </div>
               <SwitchController name="startsAt1" label={'Nodes starts at "1"'} control={control} />

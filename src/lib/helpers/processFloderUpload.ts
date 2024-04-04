@@ -29,5 +29,5 @@ export async function processFolderUpload(
   }
 
   onUpload?.(files);
-  return Promise.resolve(files);
+  return Promise.resolve([]);
 }

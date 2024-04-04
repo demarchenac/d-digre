@@ -1,7 +1,14 @@
 export { DFS } from "./dfs";
 export { findSourceTargetPaths } from "./findSourceTargetPaths";
+export { getAlgorithmMetadata } from "./getAlgorithmMetadata";
 export { getRandomInt } from "./getRandomInt";
+export { getRawMergedSolutions } from "./getRawMergedSolutions";
+export { getRawSolutions } from "./getRawSolutions";
+export { getTrimmedMergedSolutions } from "./getTrimmedMergedSolutions";
+export { getTrimmedSolutions } from "./getTrimmedSolutions";
+export { getUniquePaths } from "./getUniquePaths";
 export { parseLinkIdToLink, parseLinkToLinkId, parseToPartialLinkId } from "./linkAndIdParsing";
+export { parseFileToAlgorithmMetadata } from "./parseFileToAlgorithmMetadata";
 export { parseFileToGraph } from "./parseFileToGraph";
 export { parseGraphToId } from "./parseGraphToId";
 export { processFolderUpload } from "./processFloderUpload";

@@ -1,7 +1,10 @@
-import type { DirectedNode, DirectedGraph, Link } from "~/types";
-import { range } from "./range";
+import type { DirectedGraph } from "~/types";
 import { findSourceTargetPaths } from "./findSourceTargetPaths";
 import { zeros } from "./zeros";
+import { getFileLines } from "./getFileLines";
+import { getMetadataFromLines } from "./getMetadataFromLines";
+import { isSquared } from "./isSquared";
+import { getNodesAndLinks } from "./getNodesAndLinks";
 
 export async function parseFileToGraph({
   file,
@@ -16,70 +19,16 @@ export async function parseFileToGraph({
     return;
   }
 
-  let contents = await file.text();
+  const lines = await getFileLines(file);
+  const metadata = getMetadataFromLines(lines, startsAt1);
 
-  if (contents.startsWith("\r\n")) {
-    contents = contents.replace("\r\n", "Untitled Graph\r\n");
-  }
-
-  const lines = contents
-    .split(/\n/g)
-    .map((line) => line.replace(/\r/, "").trim().replace(/\s+/g, " "))
-    .filter((line) => line.trim().length > 0);
-
-  const capacities = lines.slice(2)?.map((row) => row.split(" ").map(Number));
-
-  const metadata = {
-    startsAt1: startsAt1 ?? false,
-    description: lines.at(0) ?? "",
-    capacities,
-    adjacency: capacities.map((row) => row.map((node) => (node > 0 ? 1 : 0))),
-  };
-
-  const numberOfVertexes = metadata.capacities[0]?.length ?? 0;
-  const isSquared =
-    metadata.capacities.length === numberOfVertexes &&
-    metadata.capacities.every((weights) => weights.length === numberOfVertexes);
-
-  if (!isSquared) {
+  if (!isSquared(metadata.capacities)) {
     console.error("Graph isn't squared");
     alert("Graph isn't squared");
     return;
   }
 
-  const nodeList = range(0, metadata.capacities.length);
-
-  const nodes: DirectedNode[] = nodeList.map((node) => ({
-    isSelected: false,
-    shouldRender: true,
-    height: 0,
-    depth: 0,
-    maxDepth: 0,
-    id: node,
-    outgoing: [],
-    incoming: [],
-  }));
-
-  const links: Link[] = [];
-  nodeList.forEach((source) =>
-    nodeList.forEach((target) => {
-      const link = {
-        source,
-        target,
-        from: source,
-        to: target,
-        weight: metadata.capacities[source]?.[target] ?? 0,
-        isSelected: false,
-        shouldRender: true,
-      };
-      if (link.weight > 0) links.push(link);
-    }),
-  );
-
-  links.forEach(({ from: source, to: target }) => {
-    nodes[source]?.outgoing.push(target);
-    nodes[target]?.incoming.push(source);
-  });
+  const { nodes, links } = getNodesAndLinks(metadata.capacities);
 
   const sources = nodes
     .map(({ id, incoming }) => (incoming.length === 0 ? id : null))
