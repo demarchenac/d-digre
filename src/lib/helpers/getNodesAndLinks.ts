@@ -7,6 +7,7 @@ export function getNodesAndLinks(capacities: number[][]) {
   const nodes: DirectedNode[] = nodeList.map((node) => ({
     isSelected: false,
     shouldRender: true,
+    isEncoder: false,
     height: 0,
     depth: 0,
     maxDepth: 0,

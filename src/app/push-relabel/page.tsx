@@ -9,7 +9,7 @@ import {
   stateAtom,
   trimmingMethodAtom,
 } from "~/lib/jotai";
-import { type AppState } from "~/types";
+import type { AlgorithmMetadata, AppState } from "~/types";
 
 export default function HomePage() {
   const graph = useAtomValue(graphAtom, { store: useStore() });
@@ -29,34 +29,24 @@ export default function HomePage() {
   if (hasntRanAlgorithm || ranAlgorithmAintPushRelabel)
     return <p className={centerClasses}>Run the Push Relabel algorithm</p>;
 
-  let visibleNodes: number[] = [];
-  const visibleLinks: { source: number; target: number }[] = [];
+  let meta: AlgorithmMetadata = {
+    visibleLinks: [],
+    visibleNodes: [],
+    encoders: [],
+  } as unknown as AlgorithmMetadata;
 
   if (
     typeof pair !== "undefined" ||
     (["selected-raw-merged", "selected-trimmed-merged"] as AppState[]).includes(state)
   ) {
-    let paths: number[][] = [];
-
     if (pair && pair.startsWith("raw:")) {
-      paths = graph.pushRelabel.raw[pair]!.paths;
+      meta = graph.pushRelabel.raw[pair]!;
     } else if (pair && pair.startsWith("trimmed_")) {
-      paths = graph.pushRelabel.trimmed[pair]!.paths;
+      meta = graph.pushRelabel.trimmed[pair]!;
     } else if (state === "selected-raw-merged" && graph.pushRelabel.rawMerged) {
-      paths = graph.pushRelabel.rawMerged.paths;
+      meta = graph.pushRelabel.rawMerged;
     } else if (state === "selected-trimmed-merged" && method) {
-      paths = graph.pushRelabel.trimmedMerged[method].paths;
-    }
-
-    const allPaths = paths.reduce((accumulator, current) => accumulator.concat(current), []);
-
-    visibleNodes = Array.from(new Set(allPaths));
-
-    for (const path of paths) {
-      for (let targetIndex = 1; targetIndex < path.length; targetIndex++) {
-        const sourceIndex = targetIndex - 1;
-        visibleLinks.push({ source: path[sourceIndex]!, target: path[targetIndex]! });
-      }
+      meta = graph.pushRelabel.trimmedMerged[method]!;
     }
   }
 
@@ -64,8 +54,9 @@ export default function HomePage() {
     <div className={centerClasses}>
       <DirectedGraphWithWeights
         data={graph}
-        visibleNodes={visibleNodes}
-        visibleLinks={visibleLinks}
+        visibleNodes={meta.visibleNodes}
+        visibleLinks={meta.visibleLinks}
+        encoders={meta.encoders}
       />
     </div>
   );

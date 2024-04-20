@@ -1,7 +1,7 @@
 import type { AlgorithmMetadata, TuplePairPattern } from "~/types";
 import { findSourceTargetPaths } from "./findSourceTargetPaths";
 import { getAlgorithmMetadata } from "./getAlgorithmMetadata";
-import { getUniquePaths } from "./getUniquePaths";
+import { getNonRepeatingNodePaths } from "./getNonRepeatingNodePaths";
 import { pushRelabel } from "./pushRelabel";
 
 type GetRawSolutionsArguments = {
@@ -28,7 +28,7 @@ export function getRawSolutions({
        */
       const { flow, maxFlow } = pushRelabel(capacities, source, target);
       const allPaths = findSourceTargetPaths(adjacency, source, target);
-      const paths = getUniquePaths(allPaths, source, target);
+      const paths = getNonRepeatingNodePaths(allPaths, source, target);
       const solution = getAlgorithmMetadata({ flow, maxFlow, paths });
 
       solutions[`${source}_${target}`] = solution;

@@ -6,12 +6,14 @@ import { useD3Render, useDimensions } from "~/hooks";
 import { parseGraphToId, parseLinkToLinkId } from "~/lib/helpers";
 import { cn } from "~/lib/utils";
 import type { DirectedGraph, SimulationLink, SimulationNode } from "~/types";
+import { color, colors, getNodeColor, radius, strokeWidth } from "./constants";
 
 type DirectedGraphWithWeightsProps = {
   data: DirectedGraph;
   height?: number;
   width?: number;
   visibleNodes?: number[];
+  encoders?: number[];
   visibleLinks?: { source: number; target: number }[];
 };
 
@@ -33,26 +35,9 @@ export function DirectedGraphWithWeights({
   data,
   visibleNodes,
   visibleLinks,
+  encoders,
 }: DirectedGraphWithWeightsProps) {
-  const strokeWidth = 2;
-  const radius = 15;
-
-  const colors = {
-    source: { fill: "!fill-sky-500", stroke: "!stroke-sky-500" },
-    target: { fill: "!fill-green-500", stroke: "!stroke-green-500" },
-    default: { fill: "fill-slate-800", stroke: "stroke-slate-800" },
-    disabled: { fill: "fill-slate-700", stroke: "stroke-slate-700" },
-    highlight: {
-      node: { fill: "fill-amber-600" },
-      edge: { fill: "fill-amber-800", stroke: "stroke-amber-800" },
-    },
-  };
-
   const graphId = parseGraphToId(data);
-  const color = d3.scaleOrdinal(
-    [1, 2, 3, 4],
-    [colors.source.fill, colors.default.fill, colors.target.fill, colors.disabled.fill],
-  );
 
   const nodes = useMemo(() => {
     let toRender = data.nodes.map((node) => ({ ...node, shouldRender: true })) as SimulationNode[];
@@ -62,9 +47,12 @@ export function DirectedGraphWithWeights({
         shouldRender: visibleNodes.includes(node.id),
       }));
     }
+    if (encoders) {
+      toRender = toRender.map((node) => ({ ...node, isEncoder: encoders.includes(node.id) }));
+    }
 
     return toRender;
-  }, [data.nodes, visibleNodes]);
+  }, [data.nodes, visibleNodes, encoders]);
 
   const links = useMemo(() => {
     let toRender = data.links.map((link) => ({ ...link, shouldRender: true })) as SimulationLink[];
@@ -432,7 +420,7 @@ export function DirectedGraphWithWeights({
                 <circle
                   key={node.id}
                   r={radius}
-                  className={cn("cursor-pointer", color(node.shouldRender ? node.set ?? 2 : 4))}
+                  className={cn("cursor-pointer", color(getNodeColor(node)))}
                 />
                 <text
                   textAnchor="middle"
