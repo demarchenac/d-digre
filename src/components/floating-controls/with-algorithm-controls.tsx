@@ -5,9 +5,18 @@ import { useRouter } from "next/navigation";
 import { useAtom, useStore } from "jotai";
 import { Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import type { TuplePairPattern, AppState, TrimmingMethod } from "~/types";
-import { findSourceTargetPaths, getUniquePaths, pushRelabel, shuffle, zeros } from "~/lib/helpers";
+import type { TuplePairPattern, AppState, TrimmingMethod, AlgorithmMetadata } from "~/types";
+import {
+  findSourceTargetPaths,
+  getNonRepeatingNodePaths,
+  getSourceTargetSolution,
+  getVisibleNodeAndLinksFromPaths,
+  pushRelabel,
+  shuffle,
+  zeros,
+} from "~/lib/helpers";
 import { algorithmAtom, graphAtom, stateAtom } from "~/lib/jotai";
+import { getNodesAndLinks } from "~/lib/helpers/getNodesAndLinks";
 
 const nonPermissibleStatus: AppState[] = ["no-graph"];
 
@@ -34,39 +43,23 @@ export function WithAlgorithmControls() {
 
     for (const source of graph.sources) {
       for (const target of graph.targets) {
-        const pushRelabelMetadata = pushRelabel(graph.capacities, source, target);
+        const stSolution = getSourceTargetSolution({
+          algorithm: pushRelabel,
+          capacities: graph.capacities,
+          source,
+          target,
+          targets: graph.targets,
+        });
 
-        const allPaths = findSourceTargetPaths(graph.adjacency, source, target);
-        const paths = getUniquePaths(allPaths, source, target);
+        console.log({ "@": `[raw] - ${source}_${target}`, ...stSolution });
+        withPushRelabel.pushRelabel.raw[`raw:${source}_${target}`] = stSolution;
 
-        const subgraphCapacities = pushRelabelMetadata.flow.map((row) =>
-          row.map((nodeFlow) => (nodeFlow > 0 ? nodeFlow : 0)),
-        );
-
-        const subgraphAdjacency = pushRelabelMetadata.flow.map((row) =>
-          row.map((nodeFlow) => (nodeFlow > 0 ? 1 : 0)),
-        );
-
-        const metadata = {
-          ...pushRelabelMetadata,
-          paths: paths,
-          capacities: subgraphCapacities,
-          adjacency: subgraphAdjacency,
-          nodeCount: subgraphAdjacency.length,
-          targets: Array.from(graph.targets),
-        };
-
-        withPushRelabel.pushRelabel.raw[`raw:${source}_${target}`] = metadata;
-
-        if (pushRelabelMetadata.maxFlow < minimalMaximumFlow) {
-          minimalMaximumFlow = pushRelabelMetadata.maxFlow;
-        }
-
-        if (pushRelabelMetadata.maxFlow > maximalMaximumFlow) {
-          maximalMaximumFlow = pushRelabelMetadata.maxFlow;
-        }
+        if (stSolution.maxFlow < minimalMaximumFlow) minimalMaximumFlow = stSolution.maxFlow;
+        if (stSolution.maxFlow > maximalMaximumFlow) maximalMaximumFlow = stSolution.maxFlow;
       }
     }
+
+    console.log("-----------------------------");
 
     let shouldTrimSubgraphs = false;
 
@@ -89,31 +82,98 @@ export function WithAlgorithmControls() {
           return 0;
         });
 
+        const firstMeta = JSON.parse(JSON.stringify(metadata)) as AlgorithmMetadata;
+        const randomMeta = JSON.parse(JSON.stringify(metadata)) as AlgorithmMetadata;
+        const longestMeta = JSON.parse(JSON.stringify(metadata)) as AlgorithmMetadata;
+
         for (let removed = 0; removed < pathsToRemove; removed++) {
-          removingFirst.shift();
-          removingRandom.shift();
-          removingLongest.shift();
+          const firstRemoved = removingFirst.shift();
+          const randomRemoved = removingRandom.shift();
+          const longestRemoved = removingLongest.shift();
+
+          if (firstRemoved) {
+            for (let sourceIndex = 0; sourceIndex < firstRemoved.length - 1; sourceIndex++) {
+              const targetIndex = sourceIndex + 1;
+              const row = firstRemoved[sourceIndex]!;
+              const col = firstRemoved[targetIndex]!;
+              firstMeta.flow[row]![col] = 0;
+              firstMeta.capacities[row]![col] = 0;
+              firstMeta.adjacency[row]![col] = 0;
+            }
+          }
+
+          if (randomRemoved) {
+            for (let sourceIndex = 0; sourceIndex < randomRemoved.length - 1; sourceIndex++) {
+              const targetIndex = sourceIndex + 1;
+              const row = randomRemoved[sourceIndex]!;
+              const col = randomRemoved[targetIndex]!;
+              randomMeta.flow[row]![col] = 0;
+              randomMeta.capacities[row]![col] = 0;
+              randomMeta.adjacency[row]![col] = 0;
+            }
+          }
+
+          if (longestRemoved) {
+            for (let sourceIndex = 0; sourceIndex < longestRemoved.length - 1; sourceIndex++) {
+              const targetIndex = sourceIndex + 1;
+              const row = longestRemoved[sourceIndex]!;
+              const col = longestRemoved[targetIndex]!;
+              longestMeta.flow[row]![col] = 0;
+              longestMeta.capacities[row]![col] = 0;
+              longestMeta.adjacency[row]![col] = 0;
+            }
+          }
         }
 
+        const firstVisibility = getVisibleNodeAndLinksFromPaths(removingFirst);
+        const longestVisibility = getVisibleNodeAndLinksFromPaths(removingLongest);
+        const randomVisibility = getVisibleNodeAndLinksFromPaths(removingRandom);
+
         withPushRelabel.pushRelabel.trimmed[`trimmed_first:${pair}`] = {
-          ...metadata,
+          ...firstMeta,
           maxFlow: minimalMaximumFlow,
           paths: removingFirst,
+          encoders: [],
+          visibleNodes: Array.from(firstVisibility.nodes),
+          visibleLinks: Array.from(firstVisibility.links),
         };
 
         withPushRelabel.pushRelabel.trimmed[`trimmed_longest:${pair}`] = {
-          ...metadata,
+          ...longestMeta,
           maxFlow: minimalMaximumFlow,
           paths: removingLongest,
+          encoders: [],
+          visibleNodes: Array.from(longestVisibility.nodes),
+          visibleLinks: Array.from(longestVisibility.links),
         };
 
         withPushRelabel.pushRelabel.trimmed[`trimmed_random:${pair}`] = {
-          ...metadata,
+          ...randomMeta,
           maxFlow: minimalMaximumFlow,
           paths: removingRandom,
+          encoders: [],
+          visibleNodes: Array.from(randomVisibility.nodes),
+          visibleLinks: Array.from(randomVisibility.links),
         };
+
+        console.log({
+          "@": `[first] - ${pair}`,
+          ...withPushRelabel.pushRelabel.trimmed[`trimmed_first:${pair}`],
+        });
+
+        console.log({
+          "@": `[longest] - ${pair}`,
+          ...withPushRelabel.pushRelabel.trimmed[`trimmed_longest:${pair}`],
+        });
+
+        console.log({
+          "@": `[random] - ${pair}`,
+          ...withPushRelabel.pushRelabel.trimmed[`trimmed_random:${pair}`],
+        });
       }
     }
+
+    console.log("*****************************");
 
     const rawMergedCapacity = zeros(graph.adjacency.length).map(() =>
       zeros(graph.adjacency.length),
@@ -126,18 +186,18 @@ export function WithAlgorithmControls() {
       const [pair] = kindMap as [TuplePairPattern, boolean];
       const meta = withPushRelabel.pushRelabel.raw[`raw:${pair}`]!;
       meta.capacities.forEach((row, rowIndex) => {
-        row.forEach((node, nodeIndex) => {
+        row.forEach((capacity, nodeIndex) => {
           rawMergedCapacity[rowIndex]![nodeIndex] = Math.max(
             rawMergedCapacity[rowIndex]![nodeIndex]!,
-            node,
+            capacity,
           );
         });
       });
       meta.flow.forEach((row, rowIndex) => {
-        row.forEach((node, nodeIndex) => {
+        row.forEach((flow, nodeIndex) => {
           rawMergedFlow[rowIndex]![nodeIndex] = Math.max(
             rawMergedFlow[rowIndex]![nodeIndex]!,
-            node,
+            flow,
           );
         });
       });
@@ -153,6 +213,27 @@ export function WithAlgorithmControls() {
       path.split("-").map(Number),
     );
 
+    const visibleLinks: string[] = [];
+    for (const path of nonRepeatedPathsForRawMerged) {
+      for (let targetIndex = 1; targetIndex < path.length; targetIndex++) {
+        const sourceIndex = targetIndex - 1;
+        visibleLinks.push(`${path[sourceIndex]}-${path[targetIndex]}`);
+      }
+    }
+
+    const { nodes: rawMergedNodes } = getNodesAndLinks(rawMergedCapacity);
+    const fixedNodes = rawMergedNodes.map((node) => ({
+      ...node,
+      incoming: node.incoming.filter((incoming) => visibleLinks.includes(`${incoming}-${node.id}`)),
+      outgoing: node.outgoing.filter((outgoing) => visibleLinks.includes(`${node.id}-${outgoing}`)),
+    }));
+
+    const rawEncoders = fixedNodes
+      .filter((node) => node.incoming.length >= 2 && node.outgoing.length > 0)
+      .map((node) => node.id);
+
+    const rawMergedVisibility = getVisibleNodeAndLinksFromPaths(nonRepeatedPathsForRawMerged);
+
     withPushRelabel.pushRelabel.rawMerged = {
       capacities: rawMergedCapacity,
       adjacency: rawMergedAdjacency,
@@ -161,7 +242,17 @@ export function WithAlgorithmControls() {
       paths: nonRepeatedPathsForRawMerged,
       nodeCount: rawMergedAdjacency.length,
       targets: Array.from(graph.targets),
+      encoders: Array.from(rawEncoders),
+      visibleNodes: Array.from(rawMergedVisibility.nodes),
+      visibleLinks: Array.from(rawMergedVisibility.links),
     };
+
+    console.log({
+      "@": `[raw merged]`,
+      ...withPushRelabel.pushRelabel.rawMerged,
+    });
+
+    console.log("vvvvvvvvvvvvvvvvvvvvvvvvvvvvv");
 
     if (shouldTrimSubgraphs) {
       for (const method of ["first", "longest", "random"] as TrimmingMethod[]) {
@@ -182,18 +273,18 @@ export function WithAlgorithmControls() {
             : withPushRelabel.pushRelabel.raw[`raw:${pair}`]!;
 
           meta.capacities.forEach((row, rowIndex) => {
-            row.forEach((node, nodeIndex) => {
+            row.forEach((capacity, nodeIndex) => {
               trimmedMergedCapacity[rowIndex]![nodeIndex] = Math.max(
                 trimmedMergedCapacity[rowIndex]![nodeIndex]!,
-                node,
+                capacity,
               );
             });
           });
           meta.flow.forEach((row, rowIndex) => {
-            row.forEach((node, nodeIndex) => {
+            row.forEach((flow, nodeIndex) => {
               trimmedMergedFlow[rowIndex]![nodeIndex] = Math.max(
                 trimmedMergedFlow[rowIndex]![nodeIndex]!,
-                node,
+                flow,
               );
             });
           });
@@ -209,6 +300,15 @@ export function WithAlgorithmControls() {
           (path) => path.split("-").map(Number),
         );
 
+        const { nodes: trimmedMerged } = getNodesAndLinks(trimmedMergedCapacity);
+        const trimmedEncoders = trimmedMerged
+          .filter((node) => node.incoming.length >= 2 && node.outgoing.length > 0)
+          .map((node) => node.id);
+
+        const trimmingMethodVisibility = getVisibleNodeAndLinksFromPaths(
+          nonRepeatedPathsForTrimmedMerged,
+        );
+
         withPushRelabel.pushRelabel.trimmedMerged[method] = {
           capacities: trimmedMergedCapacity,
           adjacency: trimmedMergedAdjacency,
@@ -217,9 +317,19 @@ export function WithAlgorithmControls() {
           paths: nonRepeatedPathsForTrimmedMerged,
           nodeCount: trimmedMergedAdjacency.length,
           targets: Array.from(graph.targets),
+          encoders: Array.from(trimmedEncoders),
+          visibleNodes: Array.from(trimmingMethodVisibility.nodes),
+          visibleLinks: Array.from(trimmingMethodVisibility.links),
         };
+
+        console.log({
+          "@": `[merged ${method}]`,
+          ...withPushRelabel.pushRelabel.trimmedMerged[method],
+        });
       }
     }
+
+    console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
 
     setGraph(withPushRelabel);
     setState("ran-algorithm");

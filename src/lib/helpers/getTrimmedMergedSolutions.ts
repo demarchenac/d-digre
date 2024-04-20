@@ -1,5 +1,7 @@
 import type { AlgorithmMetadata, TrimmingMethod, TuplePairPattern } from "~/types";
 import { zeros } from "./zeros";
+import { getNodesAndLinks } from "./getNodesAndLinks";
+import { getVisibleNodeAndLinksFromPaths } from "./getVisibleNodeAndLinksFromPaths";
 
 type GetTrimmedMergedSolutionsArguments = {
   shouldTrimSubgraphs: boolean;
@@ -43,14 +45,14 @@ export function getTrimmedMergedSolutions({
       const solution = shouldUseTrimmed ? methodMap[method][pair]! : rawSolutions[pair]!;
 
       solution.capacities.forEach((row, rowIndex) => {
-        row.forEach((node, nodeIndex) => {
-          capacities[rowIndex]![nodeIndex] = Math.max(capacities[rowIndex]![nodeIndex]!, node);
+        row.forEach((capacity, nodeIndex) => {
+          capacities[rowIndex]![nodeIndex] = Math.max(capacities[rowIndex]![nodeIndex]!, capacity);
         });
       });
 
       solution.flow.forEach((row, rowIndex) => {
-        row.forEach((node, nodeIndex) => {
-          flow[rowIndex]![nodeIndex] = Math.max(flow[rowIndex]![nodeIndex]!, node);
+        row.forEach((flowValue, nodeIndex) => {
+          flow[rowIndex]![nodeIndex] = Math.max(flow[rowIndex]![nodeIndex]!, flowValue);
         });
       });
 
@@ -62,14 +64,24 @@ export function getTrimmedMergedSolutions({
     const paths = Array.from(new Set(allPaths)).map((path) => path.split("-").map(Number));
     const targets = Array.from(new Set(paths.map((path) => path.at(-1) ?? 0)));
 
+    const { nodes } = getNodesAndLinks(adjacency);
+    const encoders = nodes
+      .filter((node) => node.incoming.length >= 2 && node.outgoing.length > 0)
+      .map((node) => node.id);
+
+    const visibility = getVisibleNodeAndLinksFromPaths(paths);
+
     solutions[method] = {
-      capacities: capacities,
-      adjacency: adjacency,
-      flow: flow,
+      capacities,
+      adjacency,
+      flow,
       maxFlow: min,
-      paths: paths,
+      paths,
       nodeCount: capacities.length,
       targets,
+      encoders,
+      visibleLinks: visibility.links,
+      visibleNodes: visibility.nodes,
     };
   }
 

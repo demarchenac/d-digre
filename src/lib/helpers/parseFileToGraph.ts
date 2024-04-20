@@ -92,7 +92,11 @@ export async function parseFileToGraph({
   });
 
   const targets = nodes
-    .map(({ id, outgoing }) => (outgoing.length === 0 ? id : null))
+    .map(({ id, outgoing }) =>
+      lines.at(1)?.includes(`${id + Number(metadata.startsAt1)}`) && outgoing.length === 0
+        ? id
+        : null,
+    )
     .filter((id) => id !== null) as number[];
 
   nodes.forEach(({ id }) => {
@@ -117,6 +121,8 @@ export async function parseFileToGraph({
     links,
     pushRelabel: { raw: {}, trimmed: {}, trimmedMerged: {} },
   };
+
+  console.log({ graph });
 
   return graph;
 }

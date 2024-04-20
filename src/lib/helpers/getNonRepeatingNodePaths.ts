@@ -1,4 +1,4 @@
-export function getUniquePaths(paths: number[][], source: number, target: number) {
+export function getNonRepeatingNodePaths(paths: number[][], source: number, target: number) {
   let usedNodes: number[] = [];
   const pathsWithoutRepeatingNode = [];
   for (const path of paths) {

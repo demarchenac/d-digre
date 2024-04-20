@@ -169,11 +169,14 @@ export function WithPushRelabelControls() {
   const onDownloadClick = () => {
     const toExport = {} as DownloadableGraph;
     let metadata = {} as AlgorithmMetadata;
+    let special_keyword = "";
     if (state === "selected-raw-merged" && graph.pushRelabel.rawMerged) {
       metadata = graph.pushRelabel.rawMerged;
+      special_keyword = "raw-merge";
     }
     if (state === "selected-trimmed-merged" && trimmingMethod) {
       metadata = graph.pushRelabel.trimmedMerged[trimmingMethod];
+      special_keyword = `${trimmingMethod}-merge`;
     }
 
     toExport.nodeCount = metadata.adjacency.length;
@@ -184,14 +187,15 @@ export function WithPushRelabelControls() {
     toExport.adjacency = metadata.adjacency;
 
     const lines: string[] = [];
-    lines.push(`${toExport.nodeCount} ${toExport.maxFlow} ${toExport.targetCount}\n`);
-    lines.push(targets.join(" ") + "\n");
+    lines.push(metadata.targets.join(" ") + "\n");
+    lines.push(metadata.encoders.join(" ") + "\n");
     toExport.adjacency.forEach((row) => lines.push(row.join(" ") + "\n"));
 
     const url = window.URL.createObjectURL(new Blob(lines));
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `${graph.description}.txt`);
+    const filename = `${graph.description} ${special_keyword}`.trim();
+    link.setAttribute("download", `${filename}.txt`);
     document.body.appendChild(link);
     link.click();
     link.parentNode?.removeChild(link);

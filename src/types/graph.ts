@@ -3,6 +3,7 @@ import { type TrimmingMethod, type PairPattern } from "./state";
 export type DirectedNode = {
   isSelected: boolean;
   shouldRender: boolean;
+  isEncoder: boolean;
   id: number;
   set?: 1 | 2 | 3;
   outgoing: number[];
@@ -31,10 +32,13 @@ export type AlgorithmMetadata = {
   maxFlow: number;
   nodeCount: number;
   targets: number[];
+  encoders: number[];
   flow: number[][];
   paths: number[][];
   capacities: number[][];
   adjacency: (0 | 1)[][];
+  visibleNodes: number[];
+  visibleLinks: { source: number; target: number }[];
 };
 
 export type DirectedGraph = {
