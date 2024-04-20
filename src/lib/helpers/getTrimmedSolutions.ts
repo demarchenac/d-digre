@@ -1,5 +1,6 @@
 import { shuffle } from "d3";
 import type { AlgorithmMetadata, TuplePairPattern } from "~/types";
+import { getVisibleNodeAndLinksFromPaths } from "./getVisibleNodeAndLinksFromPaths";
 
 type GetTrimmedSolutionsArguments = {
   min: number;
@@ -31,17 +32,81 @@ export function getTrimmedSolutions({ min, solutions }: GetTrimmedSolutionsArgum
         return 0;
       });
 
+      const firstMeta = JSON.parse(JSON.stringify(metadata)) as AlgorithmMetadata;
+      const randomMeta = JSON.parse(JSON.stringify(metadata)) as AlgorithmMetadata;
+      const longestMeta = JSON.parse(JSON.stringify(metadata)) as AlgorithmMetadata;
+
       for (let removed = 0; removed < pathsToRemove; removed++) {
-        removingFirst.shift();
-        removingRandom.shift();
-        removingLongest.shift();
+        const firstRemoved = removingFirst.shift();
+        const randomRemoved = removingRandom.shift();
+        const longestRemoved = removingLongest.shift();
+
+        if (firstRemoved) {
+          for (let sourceIndex = 0; sourceIndex < firstRemoved.length - 1; sourceIndex++) {
+            const targetIndex = sourceIndex + 1;
+            const row = firstRemoved[sourceIndex]!;
+            const col = firstRemoved[targetIndex]!;
+            firstMeta.flow[row]![col] = 0;
+            firstMeta.capacities[row]![col] = 0;
+            firstMeta.adjacency[row]![col] = 0;
+          }
+        }
+
+        if (randomRemoved) {
+          for (let sourceIndex = 0; sourceIndex < randomRemoved.length - 1; sourceIndex++) {
+            const targetIndex = sourceIndex + 1;
+            const row = randomRemoved[sourceIndex]!;
+            const col = randomRemoved[targetIndex]!;
+            randomMeta.flow[row]![col] = 0;
+            randomMeta.capacities[row]![col] = 0;
+            randomMeta.adjacency[row]![col] = 0;
+          }
+        }
+
+        if (longestRemoved) {
+          for (let sourceIndex = 0; sourceIndex < longestRemoved.length - 1; sourceIndex++) {
+            const targetIndex = sourceIndex + 1;
+            const row = longestRemoved[sourceIndex]!;
+            const col = longestRemoved[targetIndex]!;
+            longestMeta.flow[row]![col] = 0;
+            longestMeta.capacities[row]![col] = 0;
+            longestMeta.adjacency[row]![col] = 0;
+          }
+        }
       }
 
       const maxFlow = min;
 
-      first[pair] = { ...metadata, maxFlow, paths: removingFirst };
-      longest[pair] = { ...metadata, maxFlow, paths: removingLongest };
-      random[pair] = { ...metadata, maxFlow, paths: removingRandom };
+      const firstVisibility = getVisibleNodeAndLinksFromPaths(removingFirst);
+      const longestVisibility = getVisibleNodeAndLinksFromPaths(removingLongest);
+      const randomVisibility = getVisibleNodeAndLinksFromPaths(removingRandom);
+
+      first[pair] = {
+        ...firstMeta,
+        maxFlow,
+        paths: removingFirst,
+        encoders: [],
+        visibleNodes: Array.from(firstVisibility.nodes),
+        visibleLinks: Array.from(firstVisibility.links),
+      };
+
+      longest[pair] = {
+        ...longestMeta,
+        maxFlow,
+        paths: removingLongest,
+        encoders: [],
+        visibleNodes: Array.from(longestVisibility.nodes),
+        visibleLinks: Array.from(longestVisibility.links),
+      };
+
+      random[pair] = {
+        ...randomMeta,
+        maxFlow,
+        paths: removingRandom,
+        encoders: [],
+        visibleNodes: Array.from(randomVisibility.nodes),
+        visibleLinks: Array.from(randomVisibility.links),
+      };
     }
   }
 

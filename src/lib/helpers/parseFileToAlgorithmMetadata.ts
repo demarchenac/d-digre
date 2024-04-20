@@ -32,7 +32,7 @@ export async function parseFileToAlgorithmMetadata({
 
   const targets = nodes
     .map(({ id, outgoing }) =>
-      lines.at(1)?.includes(`${id}`) && outgoing.length === 0 ? id : null,
+      lines.at(1)?.includes(`${id + Number(startsAt1)}`) && outgoing.length === 0 ? id : null,
     )
     .filter((id) => id !== null) as number[];
 

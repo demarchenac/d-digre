@@ -91,8 +91,8 @@ export function BatchUploadDialog() {
 
     downloads.forEach((download) => {
       const content = [
-        `${download.solution.nodeCount} ${download.solution.maxFlow} ${download.solution.targets.length}`,
         download.solution.targets.join(" "),
+        download.solution.encoders.join(" "),
         ...download.solution.adjacency.map((row) => row.join(" ")),
       ];
 

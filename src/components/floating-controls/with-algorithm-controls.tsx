@@ -273,18 +273,18 @@ export function WithAlgorithmControls() {
             : withPushRelabel.pushRelabel.raw[`raw:${pair}`]!;
 
           meta.capacities.forEach((row, rowIndex) => {
-            row.forEach((node, nodeIndex) => {
+            row.forEach((capacity, nodeIndex) => {
               trimmedMergedCapacity[rowIndex]![nodeIndex] = Math.max(
                 trimmedMergedCapacity[rowIndex]![nodeIndex]!,
-                node,
+                capacity,
               );
             });
           });
           meta.flow.forEach((row, rowIndex) => {
-            row.forEach((node, nodeIndex) => {
+            row.forEach((flow, nodeIndex) => {
               trimmedMergedFlow[rowIndex]![nodeIndex] = Math.max(
                 trimmedMergedFlow[rowIndex]![nodeIndex]!,
-                node,
+                flow,
               );
             });
           });

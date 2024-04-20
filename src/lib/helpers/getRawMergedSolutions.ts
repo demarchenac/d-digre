@@ -1,5 +1,7 @@
 import type { AlgorithmMetadata, TuplePairPattern } from "~/types";
 import { zeros } from "./zeros";
+import { getNodesAndLinks } from "./getNodesAndLinks";
+import { getVisibleNodeAndLinksFromPaths } from "./getVisibleNodeAndLinksFromPaths";
 
 type GetRawMergedSolutionsArguments = {
   max: number;
@@ -23,14 +25,14 @@ export function getRawMergedSolutions({
     const solution = solutions[pair]!;
 
     solution.capacities.forEach((row, rowIndex) => {
-      row.forEach((node, nodeIndex) => {
-        capacities[rowIndex]![nodeIndex] = Math.max(capacities[rowIndex]![nodeIndex]!, node);
+      row.forEach((capacity, nodeIndex) => {
+        capacities[rowIndex]![nodeIndex] = Math.max(capacities[rowIndex]![nodeIndex]!, capacity);
       });
     });
 
     solution.flow.forEach((row, rowIndex) => {
-      row.forEach((node, nodeIndex) => {
-        flow[rowIndex]![nodeIndex] = Math.max(flow[rowIndex]![nodeIndex]!, node);
+      row.forEach((flowValue, nodeIndex) => {
+        flow[rowIndex]![nodeIndex] = Math.max(flow[rowIndex]![nodeIndex]!, flowValue);
       });
     });
 
@@ -43,6 +45,27 @@ export function getRawMergedSolutions({
     path.split("-").map(Number),
   );
 
+  const visibleLinks: string[] = [];
+  for (const path of nonRepeatedPathsForRawMerged) {
+    for (let targetIndex = 1; targetIndex < path.length; targetIndex++) {
+      const sourceIndex = targetIndex - 1;
+      visibleLinks.push(`${path[sourceIndex]}-${path[targetIndex]}`);
+    }
+  }
+
+  const { nodes: rawMergedNodes } = getNodesAndLinks(capacities);
+  const fixedNodes = rawMergedNodes.map((node) => ({
+    ...node,
+    incoming: node.incoming.filter((incoming) => visibleLinks.includes(`${incoming}-${node.id}`)),
+    outgoing: node.outgoing.filter((outgoing) => visibleLinks.includes(`${node.id}-${outgoing}`)),
+  }));
+
+  const encoders = fixedNodes
+    .filter((node) => node.incoming.length >= 2 && node.outgoing.length > 0)
+    .map((node) => node.id);
+
+  const visibility = getVisibleNodeAndLinksFromPaths(nonRepeatedPathsForRawMerged);
+
   const targets = Array.from(new Set(nonRepeatedPathsForRawMerged.map((path) => path.at(-1) ?? 0)));
 
   return {
@@ -53,5 +76,8 @@ export function getRawMergedSolutions({
     paths: nonRepeatedPathsForRawMerged,
     nodeCount: capacities.length,
     targets,
+    encoders,
+    visibleLinks: visibility.links,
+    visibleNodes: visibility.nodes,
   };
 }
