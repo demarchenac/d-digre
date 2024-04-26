@@ -1,5 +1,6 @@
 export { DFS } from "./dfs";
 export { findSourceTargetPaths } from "./findSourceTargetPaths";
+export { getBrowser } from "./getBrowser";
 export { getNonRepeatingNodePaths } from "./getNonRepeatingNodePaths";
 export { getRandomInt } from "./getRandomInt";
 export { getRawMergedSolutions } from "./getRawMergedSolutions";
