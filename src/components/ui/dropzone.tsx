@@ -8,7 +8,7 @@ import {
   type DropEvent,
 } from "react-dropzone";
 import { MimeTypeIcon } from "./mime-type-icon";
-import { useState } from "react";
+import { type ChangeEvent, useState } from "react";
 import { processFolderUpload } from "~/lib/helpers";
 import { type FileWithFolder, type FileDTO } from "~/types";
 
@@ -60,8 +60,19 @@ export function Dropzone({
     });
 
   const handleDefaultUpload = async (event: DropEvent): Promise<FileDTO[]> => {
-    const fileHandles = event as unknown as FileSystemFileHandle[];
-    return Promise.all(fileHandles.map((handle) => handle.getFile()));
+    const isFirefox =
+      navigator.userAgent.includes("Mozilla") || navigator.userAgent.includes("Firefox");
+    if (!isFirefox) {
+      const fileHandles = event as unknown as FileSystemFileHandle[];
+      return Promise.all(fileHandles.map((handle) => handle.getFile()));
+    }
+
+    const changeEvent = event as ChangeEvent;
+    const target = changeEvent.target as HTMLInputElement;
+    const files = target.files;
+    if (!files) return [];
+
+    return Array.from(files);
   };
 
   const {
