@@ -7,8 +7,6 @@ import { Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import type { TuplePairPattern, AppState, TrimmingMethod, AlgorithmMetadata } from "~/types";
 import {
-  findSourceTargetPaths,
-  getNonRepeatingNodePaths,
   getSourceTargetSolution,
   getVisibleNodeAndLinksFromPaths,
   pushRelabel,

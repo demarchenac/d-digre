@@ -8,6 +8,6 @@ export function findSourceTargetPaths(graph: number[][], source: number, target:
 
   DFS(graph, source, target, visited, path, paths);
 
-  paths.sort((a, b) => a.length - b.length);
+  paths.sort((a, b) => (a.length < b.length ? -1 : 1));
   return paths;
 }

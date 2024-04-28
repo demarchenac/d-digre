@@ -65,7 +65,6 @@ export function Dropzone({
 
     if (!isFirefox) {
       const fileHandles = event as unknown as FileSystemFileHandle[];
-      console.log({ fileHandles });
       return Promise.all(fileHandles.map((handle) => handle.getFile()));
     }
 

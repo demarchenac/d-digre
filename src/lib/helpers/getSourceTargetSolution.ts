@@ -28,6 +28,7 @@ export function getSourceTargetSolution({
   const stAdjacency = stMetadata.flow.map((row) => row.map((flow) => (flow > 0 ? 1 : 0)));
 
   const paths = findSourceTargetPaths(stAdjacency, source, target);
+
   const stPaths = getNonRepeatingNodePaths(paths, source, target);
   const stVisibility = getVisibleNodeAndLinksFromPaths(stPaths);
 
