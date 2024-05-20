@@ -27,7 +27,7 @@ type FormValues = {
 export function GraphUploadDialog() {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const rhfGraphUpload = useForm<FormValues>();
+  const rhfGraphUpload = useForm<FormValues>({ defaultValues: { startsAt1: true } });
   const [state, setState] = useAtom(stateAtom, { store: useStore() });
   const setGraph = useSetAtom(graphAtom, { store: useStore() });
   const setAlgorithm = useSetAtom(algorithmAtom, { store: useStore() });
@@ -38,7 +38,10 @@ export function GraphUploadDialog() {
     if (!graphFiles) return;
 
     setIsLoading(true);
+    console.clear();
+
     const [file] = graphFiles;
+
     const graph = await parseFileToGraph({ file, startsAt1 });
 
     setGraph(graph);

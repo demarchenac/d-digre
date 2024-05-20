@@ -7,14 +7,15 @@ import { Loader2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import type { TuplePairPattern, AppState, TrimmingMethod, AlgorithmMetadata } from "~/types";
 import {
+  copy,
   getSourceTargetSolution,
   getVisibleNodeAndLinksFromPaths,
-  pushRelabel,
   shuffle,
   zeros,
 } from "~/lib/helpers";
 import { algorithmAtom, graphAtom, stateAtom } from "~/lib/jotai";
 import { getNodesAndLinks } from "~/lib/helpers/getNodesAndLinks";
+import { pushRelabel } from "~/lib/max-flow";
 
 const nonPermissibleStatus: AppState[] = ["no-graph"];
 
@@ -43,10 +44,10 @@ export function WithAlgorithmControls() {
       for (const target of graph.targets) {
         const stSolution = getSourceTargetSolution({
           algorithm: pushRelabel,
-          capacities: graph.capacities,
+          capacities: copy(graph.capacities),
           source,
           target,
-          targets: graph.targets,
+          targets: copy(graph.targets),
         });
 
         console.log({ "@": `[raw] - ${source}_${target}`, ...stSolution });
@@ -328,6 +329,12 @@ export function WithAlgorithmControls() {
     }
 
     console.log("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+
+    const flows = Object.entries(withPushRelabel.pushRelabel.raw)
+      .map(([key, value]) => `\t- ${key} => ${value.maxFlow}`)
+      .join("\n");
+
+    console.log(`flows for ${graph.fileName}:`, "\n", flows);
 
     setGraph(withPushRelabel);
     setState("ran-algorithm");

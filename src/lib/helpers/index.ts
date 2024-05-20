@@ -1,3 +1,4 @@
+export { copy } from "./copy";
 export { DFS } from "./dfs";
 export { findSourceTargetPaths } from "./findSourceTargetPaths";
 export { getBrowser } from "./getBrowser";
@@ -14,7 +15,6 @@ export { parseFileToAlgorithmMetadata } from "./parseFileToAlgorithmMetadata";
 export { parseFileToGraph } from "./parseFileToGraph";
 export { parseGraphToId } from "./parseGraphToId";
 export { processFolderUpload } from "./processFloderUpload";
-export { pushRelabel } from "./pushRelabel";
 export { range } from "./range";
 export { shuffle } from "./shuffle";
 export { zeros } from "./zeros";

@@ -42,6 +42,7 @@ export type AlgorithmMetadata = {
 };
 
 export type DirectedGraph = {
+  fileName: string;
   startsAt1: boolean;
   renderWeights: boolean;
   maxDepth: number;

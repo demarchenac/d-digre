@@ -1,8 +1,9 @@
 import type { AlgorithmMetadata } from "~/types";
-import { findSourceTargetPaths } from "./findSourceTargetPaths";
-import { getNonRepeatingNodePaths } from "./getNonRepeatingNodePaths";
+// import { findSourceTargetPaths } from "./findSourceTargetPaths";
+// import { getNonRepeatingNodePaths } from "./getNonRepeatingNodePaths";
 import { getVisibleNodeAndLinksFromPaths } from "./getVisibleNodeAndLinksFromPaths";
 import { getFixedMetadataByPaths } from "./getFixedMetadataByPaths";
+import { getConstrainedSTSubgraph } from "./getConstrainedSTSubgraph";
 
 type GetSourceTargetMetadataArguments = {
   capacities: number[][];
@@ -22,14 +23,13 @@ export function getSourceTargetSolution({
   targets,
   algorithm,
 }: GetSourceTargetMetadataArguments): AlgorithmMetadata {
-  const stMetadata = algorithm(capacities, source, target);
+  const { stAdjacency, stCapacities, stMetadata, stPaths } = getConstrainedSTSubgraph({
+    capacities: Array.from(capacities),
+    source,
+    target,
+    maxFlowAlgorithm: algorithm,
+  });
 
-  const stCapacities = stMetadata.flow.map((row) => row.map((flow) => (flow > 0 ? flow : 0)));
-  const stAdjacency = stMetadata.flow.map((row) => row.map((flow) => (flow > 0 ? 1 : 0)));
-
-  const paths = findSourceTargetPaths(stAdjacency, source, target);
-
-  const stPaths = getNonRepeatingNodePaths(paths, source, target);
   const stVisibility = getVisibleNodeAndLinksFromPaths(stPaths);
 
   const metadata = {
@@ -43,8 +43,6 @@ export function getSourceTargetSolution({
     visibleNodes: Array.from(stVisibility.nodes),
     visibleLinks: Array.from(stVisibility.links),
   };
-
-  if (paths.length === stPaths.length) return metadata;
 
   return getFixedMetadataByPaths(metadata);
 }

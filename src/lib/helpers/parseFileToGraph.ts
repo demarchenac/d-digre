@@ -30,9 +30,7 @@ export async function parseFileToGraph({
 
   const { nodes, links } = getNodesAndLinks(metadata.capacities);
 
-  const sources = nodes
-    .map(({ id, incoming }) => (incoming.length === 0 ? id : null))
-    .filter((id) => id !== null) as number[];
+  const sources = [0];
 
   // compute heights
   nodes.forEach(({ id }) => {
@@ -58,6 +56,8 @@ export async function parseFileToGraph({
 
       longest = Array.from(longestPath);
     }
+
+    if (longest.length === 0) return;
 
     node.height = longest.length - 1;
   });
@@ -91,13 +91,10 @@ export async function parseFileToGraph({
     });
   });
 
-  const targets = nodes
-    .map(({ id, outgoing }) =>
-      lines.at(1)?.includes(`${id + Number(metadata.startsAt1)}`) && outgoing.length === 0
-        ? id
-        : null,
-    )
-    .filter((id) => id !== null) as number[];
+  const targets = (lines.at(1) ?? "")
+    .split(" ")
+    .map(Number)
+    .map((node) => node - Number(metadata.startsAt1));
 
   nodes.forEach(({ id }) => {
     const node = nodes[id];
@@ -119,6 +116,8 @@ export async function parseFileToGraph({
     targets,
     nodes,
     links,
+    fileName: file.name,
+    startsAt1: false,
     pushRelabel: { raw: {}, trimmed: {}, trimmedMerged: {} },
   };
 
