@@ -32,9 +32,7 @@ export const canRelabel: CanRelabel = (from, config) => {
     const residualCapacity = getResidualCapacityOf({ from, to }, mutableConfig);
     const hasResidualCapacity = residualCapacity > 0;
 
-    const isHeightDifferenceAdmissible = mutableConfig.heights[from]! <= mutableConfig.heights[to]!;
-
-    if (hasResidualCapacity && isHeightDifferenceAdmissible) {
+    if (hasResidualCapacity) {
       if (!newResidualHeight) return true;
 
       const newHeight = mutableConfig.heights[to]! + 1;

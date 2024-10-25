@@ -13,4 +13,4 @@ export type DFS = (
   paths: number[][],
 ) => void;
 
-export type GetPaths = (...args: Parameters<MaxFlowAlgorithm<any>>) => number[][];
+export type GetPaths = (...args: Parameters<MaxFlowAlgorithm<unknown>>) => number[][];

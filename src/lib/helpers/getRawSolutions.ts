@@ -1,4 +1,5 @@
 import type { AlgorithmMetadata, TuplePairPattern } from "~/types";
+// import { oldPushRelabel } from "../max-flow";
 import { pushRelabel } from "../max-flow";
 import { getSourceTargetSolution } from "./getSourceTargetSolution";
 
@@ -16,7 +17,6 @@ export function getRawSolutions({ capacities, sources, targets }: GetRawSolution
 
   for (const source of sources) {
     for (const target of targets) {
-      console.log({ pushRelabel });
       const solution = getSourceTargetSolution({
         algorithm: pushRelabel,
         capacities,

@@ -1,6 +1,4 @@
 import type { AlgorithmMetadata } from "~/types";
-// import { findSourceTargetPaths } from "./findSourceTargetPaths";
-// import { getNonRepeatingNodePaths } from "./getNonRepeatingNodePaths";
 import { getVisibleNodeAndLinksFromPaths } from "./getVisibleNodeAndLinksFromPaths";
 import { getFixedMetadataByPaths } from "./getFixedMetadataByPaths";
 import { getConstrainedSTSubgraph } from "./getConstrainedSTSubgraph";
@@ -33,7 +31,7 @@ export function getSourceTargetSolution({
   const stVisibility = getVisibleNodeAndLinksFromPaths(stPaths);
 
   const metadata = {
-    ...stMetadata,
+    ...stMetadata!,
     paths: stPaths,
     capacities: stCapacities,
     adjacency: stAdjacency,
