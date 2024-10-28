@@ -11,22 +11,20 @@ export function pushRelabel(graph: number[][], source: number, target: number) {
   let maxFlow = 0;
   const residualAdjacency = getResidualAdjacencyListGraph(graph);
   const heightExcessList = getExcessAndHeightList(graph, residualAdjacency, source, target);
-  const { queue, residualGraph } = getPreFlow(graph, source, target);
+  const { queue, residualGraph, edges } = getPreFlow(graph, source, target);
 
   while (!queue.isEmpty()) {
     const vertex = queue.popLeft();
-    console.log(`\nv: ${vertex}, ${queue.toString()}\n`);
 
     if (!vertex) continue;
 
-    let [canPush, unsafeNeighbor] = getEdge(residualAdjacency, heightExcessList, vertex);
+    let [canPush, unsafeNeighbor] = getEdge(edges, residualAdjacency, heightExcessList, vertex);
 
     if (!heightExcessList[vertex]) continue;
 
     // push
     while (canPush && unsafeNeighbor != null && heightExcessList[vertex][1] > 0) {
       const neighbor = unsafeNeighbor;
-      console.log(`\tPushing: ${neighbor}`);
 
       if (!heightExcessList[neighbor]) continue;
       if (!residualGraph[vertex]) continue;
@@ -41,11 +39,14 @@ export function pushRelabel(graph: number[][], source: number, target: number) {
       residualGraph[vertex][neighbor] -= flowToPush;
       residualGraph[neighbor][vertex] += flowToPush;
 
-      if (!residualAdjacency[neighbor].includes(vertex)) residualAdjacency[neighbor].push(vertex);
+      if (!residualAdjacency[neighbor].includes(vertex)) {
+        residualAdjacency[neighbor].push(vertex);
+      }
 
       if (residualGraph[vertex][neighbor] === 0 && residualAdjacency[vertex].includes(neighbor)) {
-        const neighborIndex = residualAdjacency[vertex].indexOf(neighbor);
-        if (neighborIndex !== -1) residualAdjacency[vertex].splice(neighborIndex, 1);
+        residualAdjacency[vertex] = residualAdjacency[vertex].filter(
+          (adjacent) => adjacent !== neighbor,
+        );
       }
 
       heightExcessList[vertex][1] -= flowToPush;
@@ -55,14 +56,14 @@ export function pushRelabel(graph: number[][], source: number, target: number) {
 
       if (![source, target].includes(neighbor) && !queue.includes(neighbor)) queue.append(neighbor);
 
-      const edge = getEdge(residualAdjacency, heightExcessList, vertex);
+      const edge = getEdge(edges, residualAdjacency, heightExcessList, vertex);
+
       canPush = edge[0];
       unsafeNeighbor = edge[1];
     }
 
     // relabel
     if (heightExcessList[vertex][1] > 0) {
-      console.log(`\tRelabeling: ${vertex}`);
       heightExcessList[vertex][0] =
         Math.min(...getNeighborHeights(residualAdjacency, heightExcessList, vertex)) + 1;
       queue.append(vertex);
@@ -80,6 +81,5 @@ export function pushRelabel(graph: number[][], source: number, target: number) {
       else return graph[v][w] - residualGraph[v][w];
     }),
   );
-
   return { residualAdjacency, residualGraph, maxFlow, flow };
 }

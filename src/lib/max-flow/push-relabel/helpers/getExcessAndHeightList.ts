@@ -30,20 +30,21 @@ export function getExcessAndHeightList(
     if (!residual[vertex]) continue;
 
     residual[vertex].push(source);
-    const vertexIndex = residual[source].indexOf(vertex);
-
-    if (vertexIndex === -1) continue;
-
-    residual[source].splice(vertexIndex, 1);
+    residual[vertex] = residual[vertex].filter((adjacent) => adjacent !== vertex);
   }
 
   for (const vertex of listOfVerticesWithoutSource) {
-    const path = getShortestPathWithBreadthFirstSearch(residual, vertex, target);
+    const shortestFromVertexToTarget = getShortestPathWithBreadthFirstSearch(
+      residual,
+      vertex,
+      target,
+    );
 
-    if (!path) continue;
+    if (!shortestFromVertexToTarget) continue;
     if (!heightAndExcessList[vertex]) continue;
 
-    heightAndExcessList[vertex][0] = path.length - 1;
+    heightAndExcessList[vertex][0] = shortestFromVertexToTarget.length - 1;
+    if (heightAndExcessList[vertex][0] < 0) heightAndExcessList[vertex][0] = 0;
   }
 
   return heightAndExcessList;

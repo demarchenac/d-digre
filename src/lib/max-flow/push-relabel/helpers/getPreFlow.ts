@@ -10,13 +10,11 @@ export function getPreFlow(graph: number[][], source: number, target: number) {
     const row = graph[v];
     if (!row) return [];
 
-    return listOfVertices
-      .map((w) => {
-        if (row[w] == null) return undefined;
+    return listOfVertices.map((w) => {
+      if (row[w] == null) return undefined;
 
-        return row[w];
-      })
-      .filter((v) => v != null) as number[];
+      return row[w];
+    });
   });
 
   for (const w of listOfVertices) {
@@ -31,5 +29,12 @@ export function getPreFlow(graph: number[][], source: number, target: number) {
     if (graph[source][w] > 0 && w !== target) queue.append(w);
   }
 
-  return { queue, residualGraph };
+  const edges = graph.map((row) =>
+    row
+      .map((value, index) => [value, index])
+      .filter(([value]) => typeof value === "number" && value > 0)
+      .map(([_, v]) => v),
+  ) as number[][];
+
+  return { queue, residualGraph, edges };
 }
